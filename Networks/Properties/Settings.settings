@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)">
+  <Profiles>
+    <Profile Name="(Default)" />
+  </Profiles>
+  <Settings>
+    <Setting Name="Configured" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="WaterPipeLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Водопроводы</Value>
+    </Setting>
+    <Setting Name="SewerLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Канализации</Value>
+    </Setting>
+    <Setting Name="HeatingNetworkLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Теплосети</Value>
+    </Setting>
+    <Setting Name="CommunicationCableLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Линия_связи</Value>
+    </Setting>
+    <Setting Name="PowerCableLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Кабели низкого напряжения</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
+
