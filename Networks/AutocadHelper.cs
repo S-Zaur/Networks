@@ -6,9 +6,12 @@ using System.Collections.Generic;
 using Autocad = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Linq;
 using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Windows.Media.Converters;
 
 namespace Networks
 {
+    [SuppressMessage("ReSharper", "AccessToStaticMemberViaDerivedType")]
     internal static class AutocadHelper
     {
         /// <summary>
@@ -124,7 +127,8 @@ namespace Networks
             Editor ed = acDoc.Editor;
 
             // Кривая вдоль которой прокладываются коммуникации
-            PromptEntityOptions options = new PromptEntityOptions("Выберите кривую вдоль которой будут проложены коммуникации");
+            PromptEntityOptions options =
+                new PromptEntityOptions("Выберите кривую вдоль которой будут проложены коммуникации");
             options.SetRejectMessage("");
             options.AddAllowedClass(typeof(Curve), false);
             PromptEntityResult entSelRes = ed.GetEntity(options);
@@ -149,10 +153,11 @@ namespace Networks
                 new TypedValue(-4, "OR>")
             };
             SelectionFilter filter = new SelectionFilter(filterList);
-            PromptSelectionOptions selectionOptions = new PromptSelectionOptions{
+            PromptSelectionOptions selectionOptions = new PromptSelectionOptions
+            {
                 MessageForAdding = "Выберите коммуникации которые необходимо учесть(необязательно)"
             };
-            PromptSelectionResult selRes = ed.GetSelection(selectionOptions,filter);
+            PromptSelectionResult selRes = ed.GetSelection(selectionOptions, filter);
             ObjectId[] objectIds = selRes.Status != PromptStatus.OK
                 ? Array.Empty<ObjectId>()
                 : selRes.Value.GetObjectIds();
@@ -187,7 +192,6 @@ namespace Networks
 
                 tr.Commit();
             }
-        
         }
 
         /// <summary>
@@ -278,13 +282,14 @@ namespace Networks
                             nextCurve = curve.Offset(distance * offsetCoefficient, currentIgnores, deltas);
                         nextCurve.Layer = NetworkManager.GetNetworkName(network);
                         distance = curve.GetMinDistanceToCurve(nextCurve);
-                        
+
                         if (i >= networks.Length - 1)
                             continue;
 
                         if (network == Networks.WaterPipe && sizes[0] != 0)
                         {
-                            foreach (Curve ignoreCurve in curve.OffsetWithSize(distance - sizes[0] / 2, offsetCoefficient,
+                            foreach (Curve ignoreCurve in curve.OffsetWithSize(distance - sizes[0] / 2,
+                                         offsetCoefficient,
                                          sizes[0]))
                             {
                                 ignoreCurve.Layer = NetworkManager.GetNetworkName(Networks.WaterPipe);
@@ -295,7 +300,8 @@ namespace Networks
                         }
                         else if (network == Networks.HouseholdSewer && sizes[1] != 0)
                         {
-                            foreach (Curve ignoreCurve in curve.OffsetWithSize(distance - sizes[1] / 2, offsetCoefficient,
+                            foreach (Curve ignoreCurve in curve.OffsetWithSize(distance - sizes[1] / 2,
+                                         offsetCoefficient,
                                          sizes[1]))
                             {
                                 ignoreCurve.Layer = NetworkManager.GetNetworkName(Networks.HouseholdSewer);
@@ -306,14 +312,15 @@ namespace Networks
                         }
                         else if (network == Networks.HeatingNetworks && sizes[2] != 0)
                         {
-                            foreach (Curve ignoreCurve in curve.OffsetWithSize(distance- sizes[2] / 2, offsetCoefficient,
+                            foreach (Curve ignoreCurve in curve.OffsetWithSize(distance - sizes[2] / 2,
+                                         offsetCoefficient,
                                          sizes[2]))
                             {
                                 ignoreCurve.Layer = NetworkManager.GetNetworkName(Networks.HeatingNetworks);
                                 currentIgnores = currentIgnores.Append(ignoreCurve).ToArray();
                             }
 
-                            distance += sizes[2]/2;
+                            distance += sizes[2] / 2;
                         }
                         else
                         {
@@ -357,7 +364,8 @@ namespace Networks
             Editor ed = acDoc.Editor;
 
             // Кривая вдоль которой прокладываются коммуникации
-            PromptEntityOptions options = new PromptEntityOptions("Выберите кривую вдоль которой будут проложены коммуникации");
+            PromptEntityOptions options =
+                new PromptEntityOptions("Выберите кривую вдоль которой будут проложены коммуникации");
             options.SetRejectMessage("");
             options.AddAllowedClass(typeof(Curve), false);
             PromptEntityResult entSelRes = ed.GetEntity(options);
@@ -382,21 +390,262 @@ namespace Networks
                 new TypedValue(-4, "OR>")
             };
             SelectionFilter filter = new SelectionFilter(filterList);
-            PromptSelectionOptions selectionOptions = new PromptSelectionOptions{
+            PromptSelectionOptions selectionOptions = new PromptSelectionOptions
+            {
                 MessageForAdding = "Выберите коммуникации которые необходимо учесть(необязательно)"
             };
-            PromptSelectionResult selRes = ed.GetSelection(selectionOptions,filter);
+            PromptSelectionResult selRes = ed.GetSelection(selectionOptions, filter);
             ObjectId[] objectIds = selRes.Status != PromptStatus.OK
                 ? Array.Empty<ObjectId>()
                 : selRes.Value.GetObjectIds();
 
             #endregion
-            
+
             using (DocumentLock _ = acDoc.LockDocument())
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
-                
             }
+        }
+
+        public static void TempFunc(Networks[] networks)
+        {
+            #region Init
+
+            if (networks.Length == 0)
+                return;
+
+            networks = NetworkManager.GetBestPermutation(networks);
+
+            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
+            Database db = acDoc.Database;
+            Editor ed = acDoc.Editor;
+
+            // Кривая вдоль которой прокладываются коммуникации
+            PromptEntityOptions options =
+                new PromptEntityOptions("Выберите кривую вдоль которой будут проложены коммуникации");
+            options.SetRejectMessage("");
+            options.AddAllowedClass(typeof(Line), false);
+            PromptEntityResult entSelRes = ed.GetEntity(options);
+            if (entSelRes.Status != PromptStatus.OK)
+                return;
+            ObjectId id1 = entSelRes.ObjectId;
+
+            entSelRes = ed.GetEntity(options);
+            if (entSelRes.Status != PromptStatus.OK)
+                return;
+            ObjectId id2 = entSelRes.ObjectId;
+            
+            // Существующие сети которые нужно учесть
+            var filterList = new[]
+            {
+                new TypedValue(-4, "<OR"),
+                new TypedValue(0, "LINE"),
+                new TypedValue(0, "LWPOLYLINE"),
+                new TypedValue(0, "SPLINE"),
+                new TypedValue(-4, "OR>")
+            };
+            SelectionFilter filter = new SelectionFilter(filterList);
+            PromptSelectionOptions selectionOptions = new PromptSelectionOptions
+            {
+                MessageForAdding = "Выберите коммуникации которые необходимо учесть(необязательно)"
+            };
+            PromptSelectionResult selRes = ed.GetSelection(selectionOptions, filter);
+            ObjectId[] objectIds = selRes.Status != PromptStatus.OK
+                ? Array.Empty<ObjectId>()
+                : selRes.Value.GetObjectIds();
+
+            #endregion
+
+            using (DocumentLock _ = acDoc.LockDocument())
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                BlockTable acBlkTbl = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+                if (acBlkTbl is null) return;
+                BlockTableRecord acBlkTblRec =
+                    tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+                if (acBlkTblRec is null) return;
+
+                Line line1 = tr.GetObject(id1, OpenMode.ForRead) as Line;
+                Line line2 = tr.GetObject(id2, OpenMode.ForRead) as Line;
+                Curve[] ignores = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve).ToArray();
+                if (line1 is null || line2 is null) return;
+
+                var distances = NetworkManager.GetDistances(networks, new[] { 0.0, 0, 0 });
+                distances = Cumulative(distances);
+                for (int i = 0; i < networks.Length; i++)
+                {
+                    double[] distanceToIgnores = ignores.Select(x => NetworkManager.GetDistance(networks[i],
+                        NetworkManager.GetType(x.Layer))).ToArray();
+                    
+                    Point3d point1 = line1.GetPointAtParameter(distances[i]);
+                    Point3d point2 = line2.GetPointAtParameter(distances[i]);
+                    var newLine = ConnectPoints(point1,point2,ignores,distanceToIgnores);
+                    newLine.Layer = NetworkManager.GetNetworkName(networks[i]);
+                    acBlkTblRec.AppendEntity(newLine);
+                    tr.AddNewlyCreatedDBObject(newLine, true);
+                    ignores = ignores.Append(newLine).ToArray();
+                }
+
+                tr.Commit();
+            }
+        }
+
+        private static Polyline ConnectPoints(Point3d pointFrom, Point3d pointTo, Curve[] curves)
+        {
+            Polyline polyline = new Polyline();
+            polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
+
+            int i = 0;
+            const double delta = 1.0, distance = 1.0;
+
+            Vector3d vectorMem = new Vector3d();
+            int signMem = 0;
+            while (pointFrom.DistanceTo(pointTo) > 1 && i < 100)
+            {
+                Vector3d vector3d = pointTo - pointFrom;
+                vector3d /= vector3d.Length;
+                vector3d *= delta;
+                pointFrom += vector3d;
+
+                foreach (var curve in curves)
+                {
+                    if (pointFrom.DistanceTo(curve.GetClosestPointTo(pointFrom, false)) < distance)
+                    {
+                        pointFrom -= vector3d;
+                        vector3d = curve.GetFirstDerivative(curve.GetClosestPointTo(pointFrom, false));
+                        vector3d /= vector3d.Length;
+                        vector3d *= delta;
+
+
+                        if (vectorMem == vector3d)
+                        {
+                            pointFrom += vector3d * signMem;
+                            polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
+                            continue;
+                        }
+
+                        var point1 = pointFrom + vector3d;
+                        var point2 = pointFrom - vector3d;
+
+                        if (pointTo.DistanceTo(point1) < pointTo.DistanceTo(point2))
+                        {
+                            pointFrom += vector3d;
+                            signMem = 1;
+                        }
+                        else
+                        {
+                            pointFrom -= vector3d;
+                            signMem = -1;
+                        }
+
+                        vectorMem = vector3d;
+                    }
+                }
+
+                polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
+                ++i;
+            }
+
+            polyline.AddVertexAt(0, pointTo.Convert2d(new Plane()), 0, 0, 0);
+
+            SimplifyPolyline(polyline);
+            return polyline;
+        }
+
+        private static Polyline ConnectPoints(Point3d pointFrom, Point3d pointTo, Curve[] curves, double[] distances)
+        {
+            Polyline polyline = new Polyline();
+            polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
+
+            int stoper = 0;
+            const double delta = 1.0;
+
+            Vector3d vectorMem = new Vector3d();
+            int signMem = 0;
+            while (pointFrom.DistanceTo(pointTo) > 1 && stoper < 100)
+            {
+                Vector3d vector3d = pointTo - pointFrom;
+                vector3d /= vector3d.Length;
+                vector3d *= delta;
+                pointFrom += vector3d;
+
+                for (int i = 0;i<curves.Length;i++)
+                {
+                    var curve = curves[i];
+                    var distance = distances[i];
+                    if (pointFrom.DistanceTo(curve.GetClosestPointTo(pointFrom, false)) < distance)
+                    {
+                        pointFrom -= vector3d;
+                        vector3d = curve.GetFirstDerivative(curve.GetClosestPointTo(pointFrom, false));
+                        vector3d /= vector3d.Length;
+                        vector3d *= delta;
+
+
+                        if (vectorMem == vector3d)
+                        {
+                            pointFrom += vector3d * signMem;
+                            polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
+                            continue;
+                        }
+
+                        var point1 = pointFrom + vector3d;
+                        var point2 = pointFrom - vector3d;
+
+                        if (pointTo.DistanceTo(point1) < pointTo.DistanceTo(point2))
+                        {
+                            pointFrom += vector3d;
+                            signMem = 1;
+                        }
+                        else
+                        {
+                            pointFrom -= vector3d;
+                            signMem = -1;
+                        }
+
+                        vectorMem = vector3d;
+                    }
+                }
+
+                polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
+                ++stoper;
+            }
+
+            polyline.AddVertexAt(0, pointTo.Convert2d(new Plane()), 0, 0, 0);
+
+            SimplifyPolyline(polyline);
+            return polyline;
+        }
+        private static void SimplifyPolyline(Polyline polyline)
+        {
+            if (polyline.NumberOfVertices <= 2)
+                return;
+
+            for (int i = 2; i < polyline.NumberOfVertices;)
+            {
+                var point1 = polyline.GetPoint2dAt(i - 2);
+                var point2 = polyline.GetPoint2dAt(i - 1);
+                var point3 = polyline.GetPoint2dAt(i);
+                var segment = new LineSegment2d(point1, point3);
+                if (segment.IsOn(point2))
+                {
+                    polyline.RemoveVertexAt(i - 1);
+                    continue;
+                }
+
+                i++;
+            }
+        }
+
+        private static double[] Cumulative(double[] array)
+        {
+            var result = new double[array.Length];
+            result[0] = array[0];
+            for (int i = 1; i < array.Length; i++)
+            {
+                result[i] = result[i - 1] + array[i];
+            }
+
+            return result;
         }
     }
 }

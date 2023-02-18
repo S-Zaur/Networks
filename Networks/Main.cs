@@ -88,6 +88,13 @@ namespace Networks
             MainForm mainForm = new MainForm();
             acad.ShowModelessDialog(mainForm);
         }
+
+        [Conditional("DEBUG")]
+        [CommandMethod("CURVAS")]
+        public void Curvas()
+        {
+            
+        }
         
     }
     

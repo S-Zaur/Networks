@@ -23,7 +23,9 @@ namespace Networks
         Railways750,
         StreetSideStone,
         ExternalEdge,
-        HvlSupportsFoundation,
+        HvlSupportsFoundation1,
+        HvlSupportsFoundation35,
+        HvlSupportsFoundationOver,
     }
 
     internal static class NetworkManager
@@ -75,35 +77,38 @@ namespace Networks
             }
         }
 
-
         /// <summary>
         /// Матрица расстояний между коммункациями
         /// Индексы соответствуют перечислению Networks
         /// </summary>
-        private static readonly double[][] Distances = new double[][]
+        private static readonly double[,] Distances = new double[,]
         {
-            new[] { 1,   1.5, 1.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1   }, // Водопровод
-            new[] { 1.5, 0.4, 0.4, 0.5, 0.5, 1,   1,   1,   1   }, // Канализация бытовая
-            new[] { 1.5, 0.4, 0.4, 0.5, 0.5, 1,   1,   1,   1   }, // Канализация дождевая
-            new[] { 0.5, 0.5, 0.5, 0.1, 0.5, 2,   2,   2,   1.5 }, // Кабели силовые
-            new[] { 0.5, 0.5, 0.5, 0.5, 0,   1,   1,   1,   1   }, // Кабели связи
-            new[] { 1.5, 1,   1,   2,   1,   0,   0,   2,   1   }, // Теплосети от наружной стенки
-            new[] { 1.5, 1,   1,   2,   1,   0,   0,   2,   1   }, // Теплосети от оболочки
-            new[] { 1.5, 1,   1,   2,   1,   2,   2,   0,   1   }, // Каналы тоннели
-            new[] { 1,   1,   1,   1.5, 1,   1,   1,   1,   0   }  // Пневмомусоропроводы
+            { 1, 1.5, 1.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1 }, // Водопровод
+            { 1.5, 0.4, 0.4, 0.5, 0.5, 1, 1, 1, 1 }, // Канализация бытовая
+            { 1.5, 0.4, 0.4, 0.5, 0.5, 1, 1, 1, 1 }, // Канализация дождевая
+            { 0.5, 0.5, 0.5, 0.1, 0.5, 2, 2, 2, 1.5 }, // Кабели силовые
+            { 0.5, 0.5, 0.5, 0.5, 0, 1, 1, 1, 1 }, // Кабели связи
+            { 1.5, 1, 1, 2, 1, 0, 0, 2, 1 }, // Теплосети от наружной стенки
+            { 1.5, 1, 1, 2, 1, 0, 0, 2, 1 }, // Теплосети от оболочки
+            { 1.5, 1, 1, 2, 1, 2, 2, 0, 1 }, // Каналы тоннели
+            { 1, 1, 1, 1.5, 1, 1, 1, 1, 0 } // Пневмомусоропроводы
         };
 
-        private static readonly double[][] Distances2 = new double[][]
-        {//         фунд фунд2жд15 жд7  бк  нбр вл1 вл35 вл>
-            new[] { 5,   3,   4,   2.8, 2,   1, 1,   2, 3  }, // Водопровод и напорная канализация 
-            new[] { 3,   1.5, 4,   2.8, 1.5, 1, 1,   2, 3  }, // Самотечная канализация
-            new[] { 3,   1,   4,   2.8, 1.5, 1, 1,   2, 3  }, // Дренаж
-            new[] { 0.4, 0.4, 0.4, 0,   0.4, 0, 0,   0, 0  }, // Сопутствующий дренаж
-            new[] { 2,   1.5, 4,   2.8, 1.5, 1, 1,   2, 3  }, // Теплосети от наружной стенки
-            new[] { 5,   1.5, 4,   2.8, 1.5, 1, 1,   2, 3  }, // теплосети от оболочки
-            new[] { 0.6, 0.5, 3.2, 2.8, 1.5, 1, 0.5, 5, 10 }, // Кабели силовые и связи
-            new[] { 2,   1.5, 4,   2.8, 1.5, 1, 1,   2, 3  }, // Каналы тоннели
-            new[] { 2,   1,   3.8, 2.8, 1.5, 1, 1,   3, 5  }  // Пневмомусоропроводы
+        /// <summary>
+        /// Матрица расстояний от коммуникаций до зданий
+        /// </summary>
+        private static readonly double[,] DistancesToBuildings = new double[,]
+        { 
+            //фунд фунд2жд15 жд7  бк  нбр вл1 вл35 вл>
+            { 5, 3, 4, 2.8, 2, 1, 1, 2, 3 }, // Водопровод и напорная канализация 
+            { 3, 1.5, 4, 2.8, 1.5, 1, 1, 2, 3 }, // Самотечная канализация
+            { 3, 1, 4, 2.8, 1.5, 1, 1, 2, 3 }, // Дренаж
+            { 0.4, 0.4, 0.4, 0, 0.4, 0, 0, 0, 0 }, // Сопутствующий дренаж
+            { 2, 1.5, 4, 2.8, 1.5, 1, 1, 2, 3 }, // Теплосети от наружной стенки
+            { 5, 1.5, 4, 2.8, 1.5, 1, 1, 2, 3 }, // теплосети от оболочки
+            { 0.6, 0.5, 3.2, 2.8, 1.5, 1, 0.5, 5, 10 }, // Кабели силовые и связи
+            { 2, 1.5, 4, 2.8, 1.5, 1, 1, 2, 3 }, // Каналы тоннели
+            { 2, 1, 3.8, 2.8, 1.5, 1, 1, 3, 5 } // Пневмомусоропроводы
         };
 
         /// <summary>
@@ -121,7 +126,126 @@ namespace Networks
         /// </summary>
         public static double GetDistance(Networks firstNetwork, Networks secondNetwork)
         {
-            return Distances[(int)firstNetwork][(int)secondNetwork];
+            int nw1 = 0, nw2 = 0;
+            switch (firstNetwork)
+            {
+                case Networks.WaterPipe:
+                    nw1 = 0;
+                    break;
+                case Networks.HouseholdSewer:
+                    nw1 = 1;
+                    break;
+                case Networks.RainSewer:
+                    nw1 = 2;
+                    break;
+                case Networks.PowerCable:
+                    nw1 = 3;
+                    break;
+                case Networks.CommunicationCable:
+                    nw1 = 4;
+                    break;
+                case Networks.HeatingNetworks:
+                    nw1 = 5;
+                    break;
+                case Networks.ChannelsAndTunnels:
+                    nw1 = 7;
+                    break;
+                case Networks.PneumoWasteChutes:
+                    nw1 = 8;
+                    break;
+            }
+            switch (secondNetwork)
+            {
+                case Networks.WaterPipe:
+                    nw2 = 0;
+                    break;
+                case Networks.HouseholdSewer:
+                    nw2 = 1;
+                    break;
+                case Networks.RainSewer:
+                    nw2 = 2;
+                    break;
+                case Networks.PowerCable:
+                    nw2 = 3;
+                    break;
+                case Networks.CommunicationCable:
+                    nw2 = 4;
+                    break;
+                case Networks.HeatingNetworks:
+                    nw2 = 5;
+                    break;
+                case Networks.ChannelsAndTunnels:
+                    nw2 = 7;
+                    break;
+                case Networks.PneumoWasteChutes:
+                    nw2 = 8;
+                    break;
+            }
+            return Distances[nw1,nw2];
+        }
+
+        /// <summary>
+        /// Получение допустимого расстояния между коммуникацией и зданием
+        /// </summary>
+        public static double GetDistanceToBuilding(Networks network, Buildings building)
+        {
+            int nw = 0, bld = 0;
+            switch (network)
+            {
+                case Networks.WaterPipe:
+                case Networks.HouseholdSewer:
+                    nw = 0;
+                    break;
+                case Networks.RainSewer:
+                    nw = 1;
+                    break;
+                case Networks.PowerCable:
+                case Networks.CommunicationCable:
+                    nw = 6;
+                    break;
+                case Networks.HeatingNetworks:
+                    nw = 4;
+                    break;
+                case Networks.ChannelsAndTunnels:
+                    nw = 7;
+                    break;
+                case Networks.PneumoWasteChutes:
+                    nw = 8;
+                    break;
+            }
+
+            switch (building)
+            {
+                case Buildings.BuildingsFoundation:
+                    bld = 0;
+                    break;
+                case Buildings.EnterprisesFoundation:
+                    bld = 1;
+                    break;
+                case Buildings.Railways1520:
+                    bld = 2;
+                    break;
+                case Buildings.Railways750:
+                    bld = 3;
+                    break;
+                case Buildings.StreetSideStone:
+                    bld = 4;
+                    break;
+                case Buildings.ExternalEdge:
+                    bld = 5;
+                    break;
+                case Buildings.HvlSupportsFoundation1:
+                    bld = 6;
+                    break;
+                case Buildings.HvlSupportsFoundation35:
+                    bld = 7;
+                    break;
+                case Buildings.HvlSupportsFoundationOver:
+                    bld = 8;
+                    break;
+            }
+
+            return DistancesToBuildings[nw, bld];
         }
 
         /// <summary>
@@ -156,8 +280,8 @@ namespace Networks
                     break;
             }
 
-            Distances[0][1] = distance;
-            Distances[1][0] = distance;
+            Distances[0,1] = distance;
+            Distances[1,0] = distance;
         }
 
         /// <summary>
@@ -198,7 +322,7 @@ namespace Networks
             // Расстояние между соседними сетями
             for (int i = 0; i < networks.Length - 1; i++)
             {
-                result[i + 1] = Distances[(int)networks[i]][(int)networks[i + 1]];
+                result[i + 1] = Distances[(int)networks[i],(int)networks[i + 1]];
             }
 
             // Расстояние между не соседними сетями
@@ -207,9 +331,9 @@ namespace Networks
                 for (int j = i + 2; j < networks.Length; j++)
                 {
                     double s = result.FromToSum(i + 1, j + 1);
-                    if (s < Distances[(int)networks[i]][(int)networks[j]])
+                    if (s < Distances[(int)networks[i],(int)networks[j]])
                     {
-                        double delta = Distances[(int)networks[i]][(int)networks[j]] - s;
+                        double delta = Distances[(int)networks[i],(int)networks[j]] - s;
                         result[j] += delta;
                     }
                 }

@@ -39,20 +39,17 @@
     <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AcCoreMgd">
-      <HintPath>C:\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AcCoreMgd.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="accoremgd">
+      <HintPath>..\..\..\..\..\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AcCoreMgd.dll</HintPath>
     </Reference>
-    <Reference Include="AcDbMgd">
-      <HintPath>C:\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AcDbMgd.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="Acdbmgd">
+      <HintPath>..\..\..\..\..\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AcDbMgd.dll</HintPath>
     </Reference>
-    <Reference Include="AcMgd">
-      <HintPath>C:\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AcMgd.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="acmgd">
+      <HintPath>..\..\..\..\..\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AcMgd.dll</HintPath>
     </Reference>
     <Reference Include="AdWindows">
-      <HintPath>C:\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AdWindows.dll</HintPath>
+      <HintPath>..\..\..\..\..\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AdWindows.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />

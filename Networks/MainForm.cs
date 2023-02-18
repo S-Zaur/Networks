@@ -85,7 +85,7 @@ namespace Networks
 
             WindowState = FormWindowState.Minimized;
 
-            AutocadHelper.DrawNetworksByArea(
+            /*AutocadHelper.DrawNetworksByArea(
                 CreateNetworkArray(),
                 new []
                 {
@@ -93,7 +93,8 @@ namespace Networks
                     double.Parse(SewersSizeTextBox.Text==""?"0":SewersSizeTextBox.Text) / 1000,
                     double.Parse(HeatingNetworksSizeTextBox.Text==""?"0":HeatingNetworksSizeTextBox.Text) / 1000
                 }
-            );
+            );*/
+            AutocadHelper.TempFunc(CreateNetworkArray());
 
             WindowState = FormWindowState.Normal;
         }
