@@ -93,7 +93,7 @@ namespace Networks
         [CommandMethod("CURVAS")]
         public void Curvas()
         {
-            
+            AutocadHelper.Curvas();
         }
         
     }

@@ -558,11 +558,11 @@ namespace Networks
             polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
 
             int stoper = 0;
-            const double delta = 1.0;
+            const double delta = 0.1;
 
             Vector3d vectorMem = new Vector3d();
             int signMem = 0;
-            while (pointFrom.DistanceTo(pointTo) > 1 && stoper < 100)
+            while (pointFrom.DistanceTo(pointTo) > 1 && stoper < 1000)
             {
                 Vector3d vector3d = pointTo - pointFrom;
                 vector3d /= vector3d.Length;
@@ -584,6 +584,16 @@ namespace Networks
                         if (vectorMem == vector3d)
                         {
                             pointFrom += vector3d * signMem;
+                            if (curve.GetClosestPointTo(pointFrom, false).DistanceTo(pointFrom) < distance)
+                            {
+                                var vector = pointFrom - curve.GetClosestPointTo(pointFrom, false);
+                                var old = vector;
+                                var len = vector.Length;
+                                vector *= distance;
+                                vector /= len;
+                                vector = vector.Subtract(old);
+                                pointFrom += vector;
+                            }
                             polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
                             continue;
                         }
@@ -602,8 +612,24 @@ namespace Networks
                             signMem = -1;
                         }
 
+                        if (curve.GetClosestPointTo(pointFrom, false).DistanceTo(pointFrom) < distance)
+                        {
+                            var vector = pointFrom - curve.GetClosestPointTo(pointFrom, false);
+                            var old = vector;
+                            var len = vector.Length;
+                            vector *= distance;
+                            vector /= len;
+                            vector = vector.Subtract(old);
+                            pointFrom += vector;
+                        }
+
                         vectorMem = vector3d;
                     }
+                }
+
+                if (stoper > 990)
+                {
+                    Autocad.DocumentManager.MdiActiveDocument.Editor.WriteMessage($"Не конец\n");
                 }
 
                 polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
@@ -646,6 +672,51 @@ namespace Networks
             }
 
             return result;
+        }
+
+        public static void Curvas()
+        {
+            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
+            Database db = acDoc.Database;
+            Editor ed = acDoc.Editor;
+
+            // Кривая вдоль которой прокладываются коммуникации
+            PromptEntityOptions options =
+                new PromptEntityOptions("Выберите кривую вдоль которой будут проложены коммуникации");
+            options.SetRejectMessage("");
+            options.AddAllowedClass(typeof(Curve), false);
+            PromptEntityResult entSelRes = ed.GetEntity(options);
+            if (entSelRes.Status != PromptStatus.OK)
+                return;
+            ObjectId id1 = entSelRes.ObjectId;
+
+            entSelRes = ed.GetEntity(options);
+            if (entSelRes.Status != PromptStatus.OK)
+                return;
+            ObjectId id2 = entSelRes.ObjectId;
+            
+            using (DocumentLock _ = acDoc.LockDocument())
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                BlockTable acBlkTbl = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+                if (acBlkTbl is null) return;
+                BlockTableRecord acBlkTblRec =
+                    tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+                if (acBlkTblRec is null) return;
+
+                Curve line1 = tr.GetObject(id1, OpenMode.ForRead) as Curve;
+                Curve line2 = tr.GetObject(id2, OpenMode.ForRead) as Curve;
+                
+                if (line1 is null || line2 is null) return;
+                
+                PointOnCurve3d[] pointOnCurve3d = line1.GetGeCurve().GetClosestPointTo(line2.GetGeCurve());
+
+                var line = new Line(pointOnCurve3d.First().Point, pointOnCurve3d.Last().Point);
+                ed.WriteMessage($"{line.Length}");
+                acBlkTblRec.AppendEntity(line);
+                tr.AddNewlyCreatedDBObject(line, true);
+                tr.Commit();
+            }
         }
     }
 }
