@@ -41,15 +41,19 @@
   <ItemGroup>
     <Reference Include="accoremgd">
       <HintPath>..\..\..\..\..\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AcCoreMgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Acdbmgd">
       <HintPath>..\..\..\..\..\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AcDbMgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="acmgd">
       <HintPath>..\..\..\..\..\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AcMgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="AdWindows">
       <HintPath>..\..\..\..\..\Autodesk\ObjectARX_for_AutoCAD_2023_Win_64bit_dlm\inc\AdWindows.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
