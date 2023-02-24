@@ -44,12 +44,13 @@
             this.SizeLabel = new System.Windows.Forms.Label();
             this.TypeLabel = new System.Windows.Forms.Label();
             this.DrawByAreaButton = new System.Windows.Forms.Button();
+            this.DrawByPointsButton = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // DrawByLineButton
             // 
-            this.DrawByLineButton.Location = new System.Drawing.Point(113, 197);
+            this.DrawByLineButton.Location = new System.Drawing.Point(33, 197);
             this.DrawByLineButton.Name = "DrawByLineButton";
             this.DrawByLineButton.Size = new System.Drawing.Size(102, 28);
             this.DrawByLineButton.TabIndex = 0;
@@ -182,19 +183,30 @@
             // 
             // DrawByAreaButton
             // 
-            this.DrawByAreaButton.Location = new System.Drawing.Point(221, 197);
+            this.DrawByAreaButton.Location = new System.Drawing.Point(141, 197);
             this.DrawByAreaButton.Name = "DrawByAreaButton";
-            this.DrawByAreaButton.Size = new System.Drawing.Size(118, 28);
+            this.DrawByAreaButton.Size = new System.Drawing.Size(102, 28);
             this.DrawByAreaButton.TabIndex = 14;
             this.DrawByAreaButton.Text = "В области";
             this.DrawByAreaButton.UseVisualStyleBackColor = true;
             this.DrawByAreaButton.Click += new System.EventHandler(this.DrawByAreaButton_Click);
+            // 
+            // DrawByPointsButton
+            // 
+            this.DrawByPointsButton.Location = new System.Drawing.Point(249, 197);
+            this.DrawByPointsButton.Name = "DrawByPointsButton";
+            this.DrawByPointsButton.Size = new System.Drawing.Size(102, 28);
+            this.DrawByPointsButton.TabIndex = 15;
+            this.DrawByPointsButton.Text = "По точкам";
+            this.DrawByPointsButton.UseVisualStyleBackColor = true;
+            this.DrawByPointsButton.Click += new System.EventHandler(this.DrawByPointsButton_Click);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(397, 238);
+            this.Controls.Add(this.DrawByPointsButton);
             this.Controls.Add(this.DrawByAreaButton);
             this.Controls.Add(this.TypeLabel);
             this.Controls.Add(this.SizeLabel);
@@ -221,6 +233,8 @@
             this.ResumeLayout(false);
             this.PerformLayout();
         }
+
+        private System.Windows.Forms.Button DrawByPointsButton;
 
         private System.Windows.Forms.Button DrawByAreaButton;
 

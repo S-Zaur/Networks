@@ -102,6 +102,13 @@ namespace Networks
         {
             AutocadHelper.TempFunc();
         }
+        
+        [Conditional("DEBUG")]
+        [CommandMethod("CONNECT")]
+        public void ConnectCurves()
+        {
+            AutocadHelper.ConnectCurves();
+        }
     }
     
     public class CommandHandlerButtonNetworks : System.Windows.Input.ICommand
