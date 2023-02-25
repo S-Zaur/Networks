@@ -22,6 +22,12 @@
     <Setting Name="PowerCableLayerName" Type="System.String" Scope="User">
       <Value Profile="(Default)">Кабели низкого напряжения</Value>
     </Setting>
+    <Setting Name="SimplifyPolyline" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="AllowIntersection" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
 

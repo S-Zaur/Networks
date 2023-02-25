@@ -93,5 +93,29 @@ namespace Networks.Properties {
                 this["PowerCableLayerName"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SimplifyPolyline {
+            get {
+                return ((bool)(this["SimplifyPolyline"]));
+            }
+            set {
+                this["SimplifyPolyline"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AllowIntersection {
+            get {
+                return ((bool)(this["AllowIntersection"]));
+            }
+            set {
+                this["AllowIntersection"] = value;
+            }
+        }
     }
 }

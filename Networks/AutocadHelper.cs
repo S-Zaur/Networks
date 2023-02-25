@@ -733,7 +733,11 @@ namespace Networks
             polyline.AddVertexAt(0, pointTo.Convert2d(new Plane()), 0, 0, 0);
 
             SimplifyPolyline(polyline);
-            SimplifyPolyline(polyline, curves, distances);
+            if (Properties.Settings.Default.SimplifyPolyline)
+                while (SimplifyPolyline(polyline, curves, distances) != 0)
+                {
+                }
+
             return polyline;
         }
 
@@ -758,10 +762,11 @@ namespace Networks
             }
         }
 
-        private static void SimplifyPolyline(Polyline polyline, Curve[] curves, double[] distances)
+        private static int SimplifyPolyline(Polyline polyline, Curve[] curves, double[] distances)
         {
             if (polyline.NumberOfVertices <= 2)
-                return;
+                return 0;
+            var oldNumberOfVertices = polyline.NumberOfVertices;
             for (int i = 1; i < polyline.NumberOfVertices - 1;)
             {
                 var point = polyline.GetPoint2dAt(i);
@@ -782,6 +787,8 @@ namespace Networks
                     break;
                 }
             }
+
+            return polyline.NumberOfVertices - oldNumberOfVertices;
         }
 
         private static double[] Cumulative(double[] array)

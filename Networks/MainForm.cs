@@ -73,7 +73,6 @@ namespace Networks
             }
         }
 
-
         private void ConfigureLayersToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ConfiguratorForm form = new ConfiguratorForm();
@@ -132,6 +131,16 @@ namespace Networks
             AutocadHelper.DrawNetworksByPoints(networks.First(), size);
 
             WindowState = FormWindowState.Normal;
+        }
+
+        private void SimplifyPolylineCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.SimplifyPolyline = SimplifyPolylineCheckBox.Checked;
+        }
+
+        private void AllowIntersectionCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.AllowIntersection = AllowIntersectionCheckBox.Checked;
         }
     }
 }

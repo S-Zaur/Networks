@@ -45,6 +45,8 @@
             this.TypeLabel = new System.Windows.Forms.Label();
             this.DrawByAreaButton = new System.Windows.Forms.Button();
             this.DrawByPointsButton = new System.Windows.Forms.Button();
+            this.SimplifyPolylineCheckBox = new System.Windows.Forms.CheckBox();
+            this.AllowIntersectionCheckBox = new System.Windows.Forms.CheckBox();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -201,11 +203,36 @@
             this.DrawByPointsButton.UseVisualStyleBackColor = true;
             this.DrawByPointsButton.Click += new System.EventHandler(this.DrawByPointsButton_Click);
             // 
+            // SimplifyPolylineCheckBox
+            // 
+            this.SimplifyPolylineCheckBox.Checked = true;
+            this.SimplifyPolylineCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.SimplifyPolylineCheckBox.Location = new System.Drawing.Point(12, 239);
+            this.SimplifyPolylineCheckBox.Name = "SimplifyPolylineCheckBox";
+            this.SimplifyPolylineCheckBox.Size = new System.Drawing.Size(143, 24);
+            this.SimplifyPolylineCheckBox.TabIndex = 16;
+            this.SimplifyPolylineCheckBox.Text = "Упрощать линию";
+            this.SimplifyPolylineCheckBox.UseVisualStyleBackColor = true;
+            this.SimplifyPolylineCheckBox.CheckedChanged += new System.EventHandler(this.SimplifyPolylineCheckBox_CheckedChanged);
+            // 
+            // AllowIntersectionCheckBox
+            // 
+            this.AllowIntersectionCheckBox.Enabled = false;
+            this.AllowIntersectionCheckBox.Location = new System.Drawing.Point(161, 239);
+            this.AllowIntersectionCheckBox.Name = "AllowIntersectionCheckBox";
+            this.AllowIntersectionCheckBox.Size = new System.Drawing.Size(224, 24);
+            this.AllowIntersectionCheckBox.TabIndex = 17;
+            this.AllowIntersectionCheckBox.Text = "Разрешить пересечения";
+            this.AllowIntersectionCheckBox.UseVisualStyleBackColor = true;
+            this.AllowIntersectionCheckBox.CheckedChanged += new System.EventHandler(this.AllowIntersectionCheckBox_CheckedChanged);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(397, 238);
+            this.ClientSize = new System.Drawing.Size(397, 273);
+            this.Controls.Add(this.AllowIntersectionCheckBox);
+            this.Controls.Add(this.SimplifyPolylineCheckBox);
             this.Controls.Add(this.DrawByPointsButton);
             this.Controls.Add(this.DrawByAreaButton);
             this.Controls.Add(this.TypeLabel);
@@ -223,9 +250,9 @@
             this.Controls.Add(this.DrawByLineButton);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
-            this.MaximumSize = new System.Drawing.Size(415, 285);
+            this.MaximumSize = new System.Drawing.Size(415, 320);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(415, 285);
+            this.MinimumSize = new System.Drawing.Size(415, 320);
             this.Name = "MainForm";
             this.Text = "Коридоры для сетей";
             this.menuStrip1.ResumeLayout(false);
@@ -233,6 +260,9 @@
             this.ResumeLayout(false);
             this.PerformLayout();
         }
+
+        private System.Windows.Forms.CheckBox SimplifyPolylineCheckBox;
+        private System.Windows.Forms.CheckBox AllowIntersectionCheckBox;
 
         private System.Windows.Forms.Button DrawByPointsButton;
 
