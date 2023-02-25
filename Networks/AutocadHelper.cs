@@ -537,6 +537,13 @@ namespace Networks
                     double[] distanceToIgnores = ignores.Select(x => NetworkManager.GetDistance(networks[i],
                         NetworkManager.GetType(x.Layer))).ToArray();
 
+                    if (networks[i] == Networks.WaterPipe && sizes[0] != 0)
+                        distanceToIgnores = distanceToIgnores.Select(x => x + sizes[0] / 2).ToArray();
+                    if (networks[i] == Networks.HouseholdSewer && sizes[1] != 0)
+                        distanceToIgnores = distanceToIgnores.Select(x => x + sizes[1] / 2).ToArray();
+                    if (networks[i] == Networks.HeatingNetworks && sizes[2] != 0)
+                        distanceToIgnores = distanceToIgnores.Select(x => x + sizes[2] / 2).ToArray();
+                    
                     Point3d point1 = line1.GetPointAtParameter(distances[i]);
                     Point3d point2 = line2.GetPointAtParameter(distances[i]);
 
