@@ -160,11 +160,13 @@ namespace Networks
         private void SimplifyPolylineCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             Properties.Settings.Default.SimplifyPolyline = SimplifyPolylineCheckBox.Checked;
+            Properties.Settings.Default.Save();
         }
 
         private void AllowIntersectionCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             Properties.Settings.Default.AllowIntersection = AllowIntersectionCheckBox.Checked;
+            Properties.Settings.Default.Save();
         }
     }
 }

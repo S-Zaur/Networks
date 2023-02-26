@@ -27,25 +27,29 @@ namespace Networks
             if (entSelRes.Status != PromptStatus.OK)
                 return;
             ObjectId id = entSelRes.ObjectId;
+            
+            entSelRes = ed.GetEntity(options);
+            if (entSelRes.Status != PromptStatus.OK)
+                return;
+            ObjectId id2 = entSelRes.ObjectId;
 
             using (DocumentLock _ = acDoc.LockDocument())
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 Polyline curve = tr.GetObject(id, OpenMode.ForRead) as Polyline;
-                if (curve is null) return;
-                var newCurve = Jarvis(curve);
+                Polyline curve2 = tr.GetObject(id2, OpenMode.ForRead) as Polyline;
+                if (curve is null || curve2 is null) return;
+                var newCurve = Join(curve,curve2);
 
-                BlockTable acBlkTbl = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-                if (acBlkTbl is null) return;
-                BlockTableRecord acBlkTblRec =
-                    tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-                if (acBlkTblRec is null) return;
+                tr.Draw(newCurve);
 
-                acBlkTblRec.AppendEntity(newCurve);
-                tr.AddNewlyCreatedDBObject(newCurve, true);
-
+                newCurve = Jarvis(newCurve);
+                tr.Draw(newCurve);
+                
                 curve.UpgradeOpen();
                 curve.Erase();
+                curve2.UpgradeOpen();
+                curve2.Erase();
                 tr.Commit();
             }
         }
@@ -534,6 +538,7 @@ namespace Networks
                 distances = Cumulative(distances);
                 for (int i = 0; i < networks.Length; i++)
                 {
+                    var currentIgnores = ignores.Select(x => x).ToArray();
                     double[] distanceToIgnores = ignores.Select(x => NetworkManager.GetDistance(networks[i],
                         NetworkManager.GetType(x.Layer))).ToArray();
 
@@ -543,6 +548,26 @@ namespace Networks
                         distanceToIgnores = distanceToIgnores.Select(x => x + sizes[1] / 2).ToArray();
                     if (networks[i] == Networks.HeatingNetworks && sizes[2] != 0)
                         distanceToIgnores = distanceToIgnores.Select(x => x + sizes[2] / 2).ToArray();
+
+                    var ignoresCount = ignores.Length;
+
+                    for (int j = 0; j < ignoresCount; j++)
+                    {
+                        for (int k = j+1; k < ignoresCount; k++)
+                        {
+                            var ignoreA = ignores[j] as Polyline;
+                            var ignoreB = ignores[k] as Polyline;
+                            var distanceBetween = ignoreA.GetMinDistanceToCurve(ignoreB);
+                            var distanceA = distanceToIgnores[j];
+                            var distanceB = distanceToIgnores[k];
+                            if (distanceA + distanceB > distanceBetween)
+                            {
+                                var additionalPolyline = Jarvis(Join(ignoreA, ignoreB));
+                                currentIgnores = currentIgnores.Append(additionalPolyline).ToArray();
+                                distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA,distanceB)).ToArray();
+                            }
+                        }
+                    }
                     
                     Point3d point1 = line1.GetPointAtParameter(distances[i]);
                     Point3d point2 = line2.GetPointAtParameter(distances[i]);
@@ -576,7 +601,7 @@ namespace Networks
                         }
                     }
 
-                    var newLine = ConnectPoints(point1, point2, ignores, distanceToIgnores);
+                    var newLine = ConnectPoints(point1, point2, currentIgnores, distanceToIgnores);
                     newLine.Layer = NetworkManager.GetNetworkName(networks[i]);
                     acBlkTblRec.AppendEntity(newLine);
                     tr.AddNewlyCreatedDBObject(newLine, true);
@@ -643,6 +668,26 @@ namespace Networks
                 double[] distanceToIgnores = ignores.Select(x => NetworkManager.GetDistance(network,
                     NetworkManager.GetType(x.Layer)) + size / 2).ToArray();
 
+                var ignoresCount = ignores.Length;
+
+                for (int j = 0; j < ignoresCount; j++)
+                {
+                    for (int k = j+1; k < ignoresCount; k++)
+                    {
+                        var ignoreA = ignores[j] as Polyline;
+                        var ignoreB = ignores[k] as Polyline;
+                        var distanceBetween = ignoreA.GetMinDistanceToCurve(ignoreB);
+                        var distanceA = distanceToIgnores[j];
+                        var distanceB = distanceToIgnores[k];
+                        if (distanceA + distanceB > distanceBetween)
+                        {
+                            var additionalPolyline = Jarvis(Join(ignoreA, ignoreB));
+                            ignores = ignores.Append(additionalPolyline).ToArray();
+                            distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA,distanceB)).ToArray();
+                        }
+                    }
+                }
+                
                 var newLine = ConnectPoints(point1, point2, ignores, distanceToIgnores);
                 newLine.Layer = NetworkManager.GetNetworkName(network);
                 acBlkTblRec.AppendEntity(newLine);
@@ -875,6 +920,21 @@ namespace Networks
             } while (polarPoint != result.StartPoint);
 
             return result;
+        }
+
+        private static Polyline Join(Polyline firstPolyline, Polyline secondPolyline)
+        {
+            var polylineCopy = firstPolyline.Clone() as Polyline;
+            if (polylineCopy is null)
+                return new Polyline();
+
+            for (int i = 0; i < secondPolyline.NumberOfVertices; i++)
+            {
+                polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices,
+                    secondPolyline.GetPoint2dAt(i),0,0,0);
+            }
+
+            return polylineCopy;
         }
     }
 }
