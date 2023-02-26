@@ -320,5 +320,129 @@ namespace Networks
                 sum += array[i];
             return sum;
         }
+        public static void Simplify(this Polyline polyline)
+        {
+            if (polyline.NumberOfVertices <= 2)
+                return;
+
+            for (int i = 2; i < polyline.NumberOfVertices;)
+            {
+                var point1 = polyline.GetPoint2dAt(i - 2);
+                var point2 = polyline.GetPoint2dAt(i - 1);
+                var point3 = polyline.GetPoint2dAt(i);
+                var segment = new LineSegment2d(point1, point3);
+                if (segment.IsOn(point2))
+                {
+                    polyline.RemoveVertexAt(i - 1);
+                    continue;
+                }
+
+                i++;
+            }
+        }
+        public static int Simplify(this Polyline polyline, Curve[] curves, double[] distances)
+        {
+            if (polyline.NumberOfVertices <= 2)
+                return 0;
+            var oldNumberOfVertices = polyline.NumberOfVertices;
+            for (int i = 1; i < polyline.NumberOfVertices - 1;)
+            {
+                var point = polyline.GetPoint2dAt(i);
+
+                polyline.RemoveVertexAt(i);
+
+                for (int j = 0; j < curves.Length; j++)
+                {
+                    var curve = curves[j];
+                    var distanceByTable = distances[j];
+                    var distanceReal = curve.GetMinDistanceToCurve(polyline) + 0.01;
+
+                    if (distanceReal > distanceByTable)
+                        continue;
+
+                    polyline.AddVertexAt(i, point, 0, 0, 0);
+                    i++;
+                    break;
+                }
+            }
+
+            return polyline.NumberOfVertices - oldNumberOfVertices;
+        }
+        /// <summary>
+        /// Алгоритм Джарвиса для Поиска минимальной выпуклой оболочки для полилинии
+        /// </summary>
+        /// <param name="polyline"></param>
+        /// <returns></returns>
+        public static Polyline Jarvis(this Polyline polyline)
+        {
+            var polylineCopy = polyline.Clone() as Polyline;
+            if (polylineCopy is null)
+                return new Polyline();
+            var result = new Polyline()
+            {
+                Layer = polyline.Layer
+            };
+
+            Point3d bottom = polyline.StartPoint;
+            for (int i = 0; i < polyline.NumberOfVertices; i++)
+                if (polyline.GetPoint3dAt(i).Y < bottom.Y)
+                    bottom = polyline.GetPoint3dAt(i);
+            result.AddVertexAt(result.NumberOfVertices, bottom.Convert2d(new Plane()), 0, 0, 0);
+
+            var polarAngle = double.MaxValue;
+            var polarPoint = new Point3d();
+
+            for (int i = 0; i < polyline.NumberOfVertices; i++)
+            {
+                var point = polyline.GetPoint3dAt(i);
+                var vector = point - bottom;
+                var phi = Math.Atan2(vector.Y, vector.X);
+                if (phi > 0 && phi < polarAngle)
+                {
+                    polarAngle = phi;
+                    polarPoint = point;
+                }
+            }
+
+            result.AddVertexAt(result.NumberOfVertices, polarPoint.Convert2d(new Plane()), 0, 0, 0);
+            polylineCopy.RemoveVertexAt((int)polylineCopy.GetParameterAtPoint(polarPoint));
+
+            do
+            {
+                polarAngle = double.MinValue;
+                polarPoint = new Point3d();
+                var vector = result.GetPoint3dAt(result.NumberOfVertices - 1) -
+                             result.GetPoint3dAt(result.NumberOfVertices - 2);
+
+                for (int i = 0; i < polylineCopy.NumberOfVertices; i++)
+                {
+                    var vector2 = polylineCopy.GetPoint3dAt(i) - result.GetPoint3dAt(result.NumberOfVertices - 1);
+                    var phi = vector.DotProduct(vector2) / (vector.Length * vector2.Length);
+                    if (phi > polarAngle)
+                    {
+                        polarAngle = phi;
+                        polarPoint = polylineCopy.GetPoint3dAt(i);
+                    }
+                }
+
+                result.AddVertexAt(result.NumberOfVertices, polarPoint.Convert2d(new Plane()), 0, 0, 0);
+                if (polarPoint == polylineCopy.StartPoint && polarPoint == polylineCopy.EndPoint)
+                    continue;
+                if (polylineCopy.NumberOfVertices > 1)
+                    polylineCopy.RemoveVertexAt((int)polylineCopy.GetParameterAtPoint(polarPoint));
+            } while (polarPoint != result.StartPoint);
+
+            return result;
+        }
+        public static double[] Cumulative(this double[] array)
+        {
+            var result = new double[array.Length];
+            result[0] = array[0];
+            for (int i = 1; i < array.Length; i++)
+            {
+                result[i] = result[i - 1] + array[i];
+            }
+            return result;
+        }
     }
 }

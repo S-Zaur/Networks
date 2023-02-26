@@ -90,20 +90,6 @@ namespace Networks
         }
 
         [Conditional("DEBUG")]
-        [CommandMethod("CURVAS")]
-        public void Curvas()
-        {
-            AutocadHelper.Curvas();
-        }
-
-        [Conditional("DEBUG")]
-        [CommandMethod("TEMPFUNC")]
-        public void TempFunc()
-        {
-            AutocadHelper.TempFunc();
-        }
-        
-        [Conditional("DEBUG")]
         [CommandMethod("CONNECT")]
         public void ConnectCurves()
         {

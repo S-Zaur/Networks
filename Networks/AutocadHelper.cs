@@ -13,88 +13,6 @@ namespace Networks
     [SuppressMessage("ReSharper", "AccessToStaticMemberViaDerivedType")]
     internal static class AutocadHelper
     {
-        public static void TempFunc()
-        {
-            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
-            Database db = acDoc.Database;
-            Editor ed = acDoc.Editor;
-
-            PromptEntityOptions options =
-                new PromptEntityOptions("Выберите кривую вдоль которой будут проложены коммуникации");
-            options.SetRejectMessage("");
-            options.AddAllowedClass(typeof(Curve), false);
-            PromptEntityResult entSelRes = ed.GetEntity(options);
-            if (entSelRes.Status != PromptStatus.OK)
-                return;
-            ObjectId id = entSelRes.ObjectId;
-            
-            entSelRes = ed.GetEntity(options);
-            if (entSelRes.Status != PromptStatus.OK)
-                return;
-            ObjectId id2 = entSelRes.ObjectId;
-
-            using (DocumentLock _ = acDoc.LockDocument())
-            using (Transaction tr = db.TransactionManager.StartTransaction())
-            {
-                Polyline curve = tr.GetObject(id, OpenMode.ForRead) as Polyline;
-                Polyline curve2 = tr.GetObject(id2, OpenMode.ForRead) as Polyline;
-                if (curve is null || curve2 is null) return;
-                var newCurve = Join(curve,curve2);
-
-                tr.Draw(newCurve);
-
-                newCurve = Jarvis(newCurve);
-                tr.Draw(newCurve);
-                
-                curve.UpgradeOpen();
-                curve.Erase();
-                curve2.UpgradeOpen();
-                curve2.Erase();
-                tr.Commit();
-            }
-        }
-
-        public static void Curvas()
-        {
-            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
-            Database db = acDoc.Database;
-            Editor ed = acDoc.Editor;
-
-            PromptPointOptions optPoint = new PromptPointOptions("Выберите точку для определения стороны кривой\n");
-            PromptPointResult pointSelRes;
-
-            using (DocumentLock _ = acDoc.LockDocument())
-            using (Transaction tr = db.TransactionManager.StartTransaction())
-            {
-                pointSelRes = ed.GetPoint(optPoint);
-                if (pointSelRes.Status != PromptStatus.OK)
-                    return;
-                Point3d point1 = pointSelRes.Value;
-
-                pointSelRes = ed.GetPoint(optPoint);
-                if (pointSelRes.Status != PromptStatus.OK)
-                    return;
-                Point3d point2 = pointSelRes.Value;
-                while (true)
-                {
-                    pointSelRes = ed.GetPoint(optPoint);
-                    if (pointSelRes.Status != PromptStatus.OK)
-                        break;
-                    Point3d point3 = pointSelRes.Value;
-
-                    var vec1 = point2 - point1;
-                    var vec2 = point3 - point1;
-                    var angle = vec1.GetAngleTo(vec2, new Vector3d(0, 0, 1));
-                    bool left = angle > Math.PI;
-                    //angle = angle > Math.PI ? 2 * Math.PI - angle : angle;
-                    //ed.WriteMessage($"{left} {angle} {vec1}\n");
-                    ed.WriteMessage($"{Math.Atan2(vec2.Y, vec2.X)}");
-                }
-
-                tr.Commit();
-            }
-        }
-
         public static void ConnectCurves()
         {
             Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
@@ -530,12 +448,12 @@ namespace Networks
                 Line line1 = tr.GetObject(id1, OpenMode.ForRead) as Line;
                 Line line2 = tr.GetObject(id2, OpenMode.ForRead) as Line;
                 Curve[] ignores = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve).ToArray();
-                ignores = ignores.Select(x => x is Polyline ? Jarvis(x as Polyline) : x).ToArray();
+                ignores = ignores.Select(x => x is Polyline ? (x as Polyline).Jarvis() : x).ToArray();
                 if (line1 is null || line2 is null) return;
 
                 var distances = NetworkManager.GetDistances(networks, new[] { 0.0, 0, 0 });
                 distances[0] = 0;
-                distances = Cumulative(distances);
+                distances = distances.Cumulative();
                 for (int i = 0; i < networks.Length; i++)
                 {
                     var currentIgnores = ignores.Select(x => x).ToArray();
@@ -564,13 +482,13 @@ namespace Networks
                             {
                                 Polyline additionalPolyline;
                                 if (ignoreA is Polyline && ignoreB is Polyline)
-                                    additionalPolyline = Jarvis(Join(ignoreA as Polyline, ignoreB as Polyline));
+                                    additionalPolyline = Join(ignoreA as Polyline, ignoreB as Polyline).Jarvis();
                                 else if (ignoreA is Polyline && ignoreB is Line)
-                                    additionalPolyline = Jarvis(Join(ignoreA as Polyline, ignoreB as Line));
+                                    additionalPolyline = Join(ignoreA as Polyline, ignoreB as Line).Jarvis();
                                 else if (ignoreA is Line && ignoreB is Polyline)
-                                    additionalPolyline = Jarvis(Join(ignoreA as Line, ignoreB as Polyline));
+                                    additionalPolyline = Join(ignoreA as Line, ignoreB as Polyline).Jarvis();
                                 else
-                                    additionalPolyline = Jarvis(Join(ignoreA as Line, ignoreB as Line));
+                                    additionalPolyline = Join(ignoreA as Line, ignoreB as Line).Jarvis();
                                 currentIgnores = currentIgnores.Append(additionalPolyline).ToArray();
                                 distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA,distanceB)).ToArray();
                             }
@@ -611,7 +529,7 @@ namespace Networks
 
                     var newLine = ConnectPoints(point1, point2, currentIgnores, distanceToIgnores);
                     if (Properties.Settings.Default.SimplifyPolyline)
-                        while (SimplifyPolyline(newLine, ignores, distanceToIgnores) != 0)
+                        while (newLine.Simplify(ignores, distanceToIgnores) != 0)
                         {
                         }
                     newLine.Layer = NetworkManager.GetNetworkName(networks[i]);
@@ -623,7 +541,6 @@ namespace Networks
                 tr.Commit();
             }
         }
-
         public static void DrawNetworksByPoints(Networks network, double size)
         {
             #region Init
@@ -673,7 +590,7 @@ namespace Networks
                 if (acBlkTblRec is null) return;
 
                 Curve[] ignores = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve).ToArray();
-                ignores = ignores.Select(x => x is Polyline ? Jarvis(x as Polyline) : x).ToArray();
+                ignores = ignores.Select(x => x is Polyline ? (x as Polyline).Jarvis() : x).ToArray();
 
                 double[] distanceToIgnores = ignores.Select(x => NetworkManager.GetDistance(network,
                     NetworkManager.GetType(x.Layer)) + size / 2).ToArray();
@@ -691,7 +608,7 @@ namespace Networks
                         var distanceB = distanceToIgnores[k];
                         if (distanceA + distanceB > distanceBetween)
                         {
-                            var additionalPolyline = Jarvis(Join(ignoreA, ignoreB));
+                            var additionalPolyline = Join(ignoreA, ignoreB).Jarvis();
                             ignores = ignores.Append(additionalPolyline).ToArray();
                             distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA,distanceB)).ToArray();
                         }
@@ -700,7 +617,7 @@ namespace Networks
                 
                 var newLine = ConnectPoints(point1, point2, ignores, distanceToIgnores);
                 if (Properties.Settings.Default.SimplifyPolyline)
-                    while (SimplifyPolyline(newLine, ignores, distanceToIgnores) != 0)
+                    while (newLine.Simplify(ignores, distanceToIgnores) != 0)
                     {
                     }
                 
@@ -711,7 +628,6 @@ namespace Networks
                 tr.Commit();
             }
         }
-
         private static Polyline ConnectPoints(Point3d pointFrom, Point3d pointTo, Curve[] curves, double[] distances)
         {
             Polyline polyline = new Polyline();
@@ -799,140 +715,10 @@ namespace Networks
 
             polyline.AddVertexAt(0, pointTo.Convert2d(new Plane()), 0, 0, 0);
 
-            SimplifyPolyline(polyline);
+            polyline.Simplify();
 
             return polyline;
         }
-
-        private static void SimplifyPolyline(Polyline polyline)
-        {
-            if (polyline.NumberOfVertices <= 2)
-                return;
-
-            for (int i = 2; i < polyline.NumberOfVertices;)
-            {
-                var point1 = polyline.GetPoint2dAt(i - 2);
-                var point2 = polyline.GetPoint2dAt(i - 1);
-                var point3 = polyline.GetPoint2dAt(i);
-                var segment = new LineSegment2d(point1, point3);
-                if (segment.IsOn(point2))
-                {
-                    polyline.RemoveVertexAt(i - 1);
-                    continue;
-                }
-
-                i++;
-            }
-        }
-
-        private static int SimplifyPolyline(Polyline polyline, Curve[] curves, double[] distances)
-        {
-            if (polyline.NumberOfVertices <= 2)
-                return 0;
-            var oldNumberOfVertices = polyline.NumberOfVertices;
-            for (int i = 1; i < polyline.NumberOfVertices - 1;)
-            {
-                var point = polyline.GetPoint2dAt(i);
-
-                polyline.RemoveVertexAt(i);
-
-                for (int j = 0; j < curves.Length; j++)
-                {
-                    var curve = curves[j];
-                    var distanceByTable = distances[j];
-                    var distanceReal = curve.GetMinDistanceToCurve(polyline) + 0.01;
-
-                    if (distanceReal > distanceByTable)
-                        continue;
-
-                    polyline.AddVertexAt(i, point, 0, 0, 0);
-                    i++;
-                    break;
-                }
-            }
-
-            return polyline.NumberOfVertices - oldNumberOfVertices;
-        }
-
-        private static double[] Cumulative(double[] array)
-        {
-            var result = new double[array.Length];
-            result[0] = array[0];
-            for (int i = 1; i < array.Length; i++)
-            {
-                result[i] = result[i - 1] + array[i];
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Алгоритм Джарвиса для Поиска минимальной выпуклой оболочки для полилинии
-        /// </summary>
-        /// <param name="polyline"></param>
-        /// <returns></returns>
-        private static Polyline Jarvis(Polyline polyline)
-        {
-            var polylineCopy = polyline.Clone() as Polyline;
-            if (polylineCopy is null)
-                return new Polyline();
-            var result = new Polyline()
-            {
-                Layer = polyline.Layer
-            };
-
-            Point3d bottom = polyline.StartPoint;
-            for (int i = 0; i < polyline.NumberOfVertices; i++)
-                if (polyline.GetPoint3dAt(i).Y < bottom.Y)
-                    bottom = polyline.GetPoint3dAt(i);
-            result.AddVertexAt(result.NumberOfVertices, bottom.Convert2d(new Plane()), 0, 0, 0);
-
-            var polarAngle = double.MaxValue;
-            var polarPoint = new Point3d();
-
-            for (int i = 0; i < polyline.NumberOfVertices; i++)
-            {
-                var point = polyline.GetPoint3dAt(i);
-                var vector = point - bottom;
-                var phi = Math.Atan2(vector.Y, vector.X);
-                if (phi > 0 && phi < polarAngle)
-                {
-                    polarAngle = phi;
-                    polarPoint = point;
-                }
-            }
-
-            result.AddVertexAt(result.NumberOfVertices, polarPoint.Convert2d(new Plane()), 0, 0, 0);
-            polylineCopy.RemoveVertexAt((int)polylineCopy.GetParameterAtPoint(polarPoint));
-
-            do
-            {
-                polarAngle = double.MinValue;
-                polarPoint = new Point3d();
-                var vector = result.GetPoint3dAt(result.NumberOfVertices - 1) -
-                             result.GetPoint3dAt(result.NumberOfVertices - 2);
-
-                for (int i = 0; i < polylineCopy.NumberOfVertices; i++)
-                {
-                    var vector2 = polylineCopy.GetPoint3dAt(i) - result.GetPoint3dAt(result.NumberOfVertices - 1);
-                    var phi = vector.DotProduct(vector2) / (vector.Length * vector2.Length);
-                    if (phi > polarAngle)
-                    {
-                        polarAngle = phi;
-                        polarPoint = polylineCopy.GetPoint3dAt(i);
-                    }
-                }
-
-                result.AddVertexAt(result.NumberOfVertices, polarPoint.Convert2d(new Plane()), 0, 0, 0);
-                if (polarPoint == polylineCopy.StartPoint && polarPoint == polylineCopy.EndPoint)
-                    continue;
-                if (polylineCopy.NumberOfVertices > 1)
-                    polylineCopy.RemoveVertexAt((int)polylineCopy.GetParameterAtPoint(polarPoint));
-            } while (polarPoint != result.StartPoint);
-
-            return result;
-        }
-
         private static Polyline Join(Polyline firstPolyline, Polyline secondPolyline)
         {
             var polylineCopy = firstPolyline.Clone() as Polyline;
@@ -969,7 +755,7 @@ namespace Networks
             result.AddVertexAt(0,firstLine.StartPoint.Convert2d(new Plane()),0,0,0);
             result.AddVertexAt(1,firstLine.EndPoint.Convert2d(new Plane()),0,0,0);
             result.AddVertexAt(2,secondLine.StartPoint.Convert2d(new Plane()),0,0,0);
-            result.AddVertexAt(3,secondLine.StartPoint.Convert2d(new Plane()),0,0,0);
+            result.AddVertexAt(3,secondLine.EndPoint.Convert2d(new Plane()),0,0,0);
             
             return result;
         }
