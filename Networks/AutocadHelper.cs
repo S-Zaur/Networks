@@ -602,6 +602,10 @@ namespace Networks
                     }
 
                     var newLine = ConnectPoints(point1, point2, currentIgnores, distanceToIgnores);
+                    if (Properties.Settings.Default.SimplifyPolyline)
+                        while (SimplifyPolyline(newLine, ignores, distanceToIgnores) != 0)
+                        {
+                        }
                     newLine.Layer = NetworkManager.GetNetworkName(networks[i]);
                     acBlkTblRec.AppendEntity(newLine);
                     tr.AddNewlyCreatedDBObject(newLine, true);
@@ -689,6 +693,11 @@ namespace Networks
                 }
                 
                 var newLine = ConnectPoints(point1, point2, ignores, distanceToIgnores);
+                if (Properties.Settings.Default.SimplifyPolyline)
+                    while (SimplifyPolyline(newLine, ignores, distanceToIgnores) != 0)
+                    {
+                    }
+                
                 newLine.Layer = NetworkManager.GetNetworkName(network);
                 acBlkTblRec.AppendEntity(newLine);
                 tr.AddNewlyCreatedDBObject(newLine, true);
@@ -785,10 +794,6 @@ namespace Networks
             polyline.AddVertexAt(0, pointTo.Convert2d(new Plane()), 0, 0, 0);
 
             SimplifyPolyline(polyline);
-            if (Properties.Settings.Default.SimplifyPolyline)
-                while (SimplifyPolyline(polyline, curves, distances) != 0)
-                {
-                }
 
             return polyline;
         }
