@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Windows.Forms;
 
 namespace Networks
@@ -10,8 +12,30 @@ namespace Networks
     [SuppressMessage("ReSharper", "LocalizableElement")]
     public partial class MainForm : Form
     {
+        private static readonly DateTime StopDate = new DateTime(2023, 3, 1);
+
+        private static DateTime GetCurrentDate()
+        {
+            try
+            {
+                using (var response =
+                       WebRequest.Create("http://www.google.com").GetResponse())
+                    //string todaysDates =  response.Headers["date"];
+                    return DateTime.ParseExact(response.Headers["date"],
+                        "ddd, dd MMM yyyy HH:mm:ss 'GMT'",
+                        CultureInfo.InvariantCulture.DateTimeFormat,
+                        DateTimeStyles.AssumeUniversal);
+            }
+            catch (WebException)
+            {
+                return DateTime.Today;
+            }
+        }
+
         public MainForm()
         {
+            if (GetCurrentDate() > StopDate)
+                return;
             InitializeComponent();
             WaterPipeTypeComboBox.SelectedIndex = 2;
             if (!Properties.Settings.Default.Configured)
