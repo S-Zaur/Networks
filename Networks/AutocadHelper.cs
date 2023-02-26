@@ -750,7 +750,10 @@ namespace Networks
         }
         private static Polyline Join(Line firstLine, Line secondLine)
         {
-            Polyline result = new Polyline();
+            Polyline result = new Polyline()
+            {
+                Layer = firstLine.Layer
+            };
 
             result.AddVertexAt(0,firstLine.StartPoint.Convert2d(new Plane()),0,0,0);
             result.AddVertexAt(1,firstLine.EndPoint.Convert2d(new Plane()),0,0,0);
