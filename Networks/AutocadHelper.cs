@@ -484,9 +484,10 @@ namespace Networks
 
             // Кривая вдоль которой прокладываются коммуникации
             PromptEntityOptions options =
-                new PromptEntityOptions("Выберите кривую вдоль которой будут проложены коммуникации");
+                new PromptEntityOptions("Выберите первую линию");
             options.SetRejectMessage("");
             options.AddAllowedClass(typeof(Line), false);
+            options.Message = "Выберите вторую линию";
             PromptEntityResult entSelRes = ed.GetEntity(options);
             if (entSelRes.Status != PromptStatus.OK)
                 return;
@@ -503,7 +504,6 @@ namespace Networks
                 new TypedValue(-4, "<OR"),
                 new TypedValue(0, "LINE"),
                 new TypedValue(0, "LWPOLYLINE"),
-                new TypedValue(0, "SPLINE"),
                 new TypedValue(-4, "OR>")
             };
             SelectionFilter filter = new SelectionFilter(filterList);
@@ -555,14 +555,22 @@ namespace Networks
                     {
                         for (int k = j+1; k < ignoresCount; k++)
                         {
-                            var ignoreA = ignores[j] as Polyline;
-                            var ignoreB = ignores[k] as Polyline;
+                            var ignoreA = ignores[j];
+                            var ignoreB = ignores[k];
                             var distanceBetween = ignoreA.GetMinDistanceToCurve(ignoreB);
                             var distanceA = distanceToIgnores[j];
                             var distanceB = distanceToIgnores[k];
                             if (distanceA + distanceB > distanceBetween)
                             {
-                                var additionalPolyline = Jarvis(Join(ignoreA, ignoreB));
+                                Polyline additionalPolyline;
+                                if (ignoreA is Polyline && ignoreB is Polyline)
+                                    additionalPolyline = Jarvis(Join(ignoreA as Polyline, ignoreB as Polyline));
+                                else if (ignoreA is Polyline && ignoreB is Line)
+                                    additionalPolyline = Jarvis(Join(ignoreA as Polyline, ignoreB as Line));
+                                else if (ignoreA is Line && ignoreB is Polyline)
+                                    additionalPolyline = Jarvis(Join(ignoreA as Line, ignoreB as Polyline));
+                                else
+                                    additionalPolyline = Jarvis(Join(ignoreA as Line, ignoreB as Line));
                                 currentIgnores = currentIgnores.Append(additionalPolyline).ToArray();
                                 distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA,distanceB)).ToArray();
                             }
@@ -635,14 +643,12 @@ namespace Networks
             if (pointSelRes.Status != PromptStatus.OK)
                 return;
             Point3d point2 = pointSelRes.Value;
-
-            // Существующие сети которые нужно учесть
+            
             var filterList = new[]
             {
                 new TypedValue(-4, "<OR"),
                 new TypedValue(0, "LINE"),
                 new TypedValue(0, "LWPOLYLINE"),
-                new TypedValue(0, "SPLINE"),
                 new TypedValue(-4, "OR>")
             };
             SelectionFilter filter = new SelectionFilter(filterList);
@@ -940,6 +946,32 @@ namespace Networks
             }
 
             return polylineCopy;
+        }
+        private static Polyline Join(Polyline polyline, Line line)
+        {
+            var polylineCopy = polyline.Clone() as Polyline;
+            if (polylineCopy is null)
+                return new Polyline();
+
+            polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices,line.StartPoint.Convert2d(new Plane()),0,0,0);
+            polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices,line.EndPoint.Convert2d(new Plane()),0,0,0);
+
+            return polylineCopy;
+        }
+        private static Polyline Join(Line line, Polyline polyline)
+        {
+            return Join(polyline, line);
+        }
+        private static Polyline Join(Line firstLine, Line secondLine)
+        {
+            Polyline result = new Polyline();
+
+            result.AddVertexAt(0,firstLine.StartPoint.Convert2d(new Plane()),0,0,0);
+            result.AddVertexAt(1,firstLine.EndPoint.Convert2d(new Plane()),0,0,0);
+            result.AddVertexAt(2,secondLine.StartPoint.Convert2d(new Plane()),0,0,0);
+            result.AddVertexAt(3,secondLine.StartPoint.Convert2d(new Plane()),0,0,0);
+            
+            return result;
         }
     }
 }
