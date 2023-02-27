@@ -601,14 +601,22 @@ namespace Networks
                 {
                     for (int k = j+1; k < ignoresCount; k++)
                     {
-                        var ignoreA = ignores[j] as Polyline;
-                        var ignoreB = ignores[k] as Polyline;
+                        var ignoreA = ignores[j];
+                        var ignoreB = ignores[k];
                         var distanceBetween = ignoreA.GetMinDistanceToCurve(ignoreB);
                         var distanceA = distanceToIgnores[j];
                         var distanceB = distanceToIgnores[k];
                         if (distanceA + distanceB > distanceBetween)
                         {
-                            var additionalPolyline = Join(ignoreA, ignoreB).Jarvis();
+                            Polyline additionalPolyline;
+                            if (ignoreA is Polyline && ignoreB is Polyline)
+                                additionalPolyline = Join(ignoreA as Polyline, ignoreB as Polyline).Jarvis();
+                            else if (ignoreA is Polyline && ignoreB is Line)
+                                additionalPolyline = Join(ignoreA as Polyline, ignoreB as Line).Jarvis();
+                            else if (ignoreA is Line && ignoreB is Polyline)
+                                additionalPolyline = Join(ignoreA as Line, ignoreB as Polyline).Jarvis();
+                            else
+                                additionalPolyline = Join(ignoreA as Line, ignoreB as Line).Jarvis();
                             ignores = ignores.Append(additionalPolyline).ToArray();
                             distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA,distanceB)).ToArray();
                         }
