@@ -112,7 +112,7 @@ namespace Networks
                     NetworkManager.GetDistance(network, NetworkManager.GetType(x.Layer))).ToArray();
                 if (network == Networks.WaterPipe && sizes[0] != 0)
                     nextCurve = curve.Offset(sizes[0], distance * offsetCoefficient, ignores, deltas);
-                else if (network == Networks.HouseholdSewer && sizes[1] != 0)
+                else if (network == Networks.Sewer && sizes[1] != 0)
                     nextCurve = curve.Offset(sizes[1], distance * offsetCoefficient, ignores, deltas);
                 else if (network == Networks.HeatingNetworks && sizes[2] != 0)
                     nextCurve = curve.Offset(sizes[2], distance * offsetCoefficient, ignores, deltas);
@@ -128,7 +128,7 @@ namespace Networks
                 distance += NetworkManager.GetDistance(networks[i], networks[i + 1]);
                 if (network == Networks.WaterPipe && sizes[0] != 0)
                     distance += sizes[0] / 2;
-                else if (network == Networks.HouseholdSewer && sizes[1] != 0)
+                else if (network == Networks.Sewer && sizes[1] != 0)
                     distance += sizes[1] / 2;
                 else if (network == Networks.HeatingNetworks && sizes[2] != 0)
                     distance += sizes[2] / 2;

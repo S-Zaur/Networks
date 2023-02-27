@@ -121,7 +121,15 @@ namespace Networks
                 Properties.Settings.Default.SewerLayerName,
                 Properties.Settings.Default.HeatingNetworkLayerName,
                 Properties.Settings.Default.CommunicationCableLayerName,
-                Properties.Settings.Default.PowerCableLayerName
+                Properties.Settings.Default.PowerCableLayerName,
+                Properties.Settings.Default.GasPipeLayerName,
+                Properties.Settings.Default.BuildingsFoundationLayerName,
+                Properties.Settings.Default.StreetSideStoneLayerName,
+                Properties.Settings.Default.ExternalEdgeLayerName,
+                Properties.Settings.Default.HvlSupportsFoundation1LayerName,
+                Properties.Settings.Default.HvlSupportsFoundation35LayerName,
+                Properties.Settings.Default.HvlSupportsFoundationOverLayerName,
+                Properties.Settings.Default.RedLineLayerName,
             };
 
             using (DocumentLock _ = acDoc.LockDocument())
@@ -307,7 +315,7 @@ namespace Networks
                         if (network == Networks.WaterPipe && sizes[0] != 0)
                             nextCurve = curve.Offset(sizes[0], distance * offsetCoefficient, currentIgnores,
                                 deltas);
-                        else if (network == Networks.HouseholdSewer && sizes[1] != 0)
+                        else if (network == Networks.Sewer && sizes[1] != 0)
                             nextCurve = curve.Offset(sizes[1], distance * offsetCoefficient, currentIgnores,
                                 deltas);
                         else if (network == Networks.HeatingNetworks && sizes[2] != 0)
@@ -333,13 +341,13 @@ namespace Networks
 
                             distance += sizes[0] / 2;
                         }
-                        else if (network == Networks.HouseholdSewer && sizes[1] != 0)
+                        else if (network == Networks.Sewer && sizes[1] != 0)
                         {
                             foreach (Curve ignoreCurve in curve.OffsetWithSize(distance - sizes[1] / 2,
                                          offsetCoefficient,
                                          sizes[1]))
                             {
-                                ignoreCurve.Layer = NetworkManager.GetNetworkName(Networks.HouseholdSewer);
+                                ignoreCurve.Layer = NetworkManager.GetNetworkName(Networks.Sewer);
                                 currentIgnores = currentIgnores.Append(ignoreCurve).ToArray();
                             }
 
@@ -462,7 +470,7 @@ namespace Networks
 
                     if (networks[i] == Networks.WaterPipe && sizes[0] != 0)
                         distanceToIgnores = distanceToIgnores.Select(x => x + sizes[0] / 2).ToArray();
-                    if (networks[i] == Networks.HouseholdSewer && sizes[1] != 0)
+                    if (networks[i] == Networks.Sewer && sizes[1] != 0)
                         distanceToIgnores = distanceToIgnores.Select(x => x + sizes[1] / 2).ToArray();
                     if (networks[i] == Networks.HeatingNetworks && sizes[2] != 0)
                         distanceToIgnores = distanceToIgnores.Select(x => x + sizes[2] / 2).ToArray();

@@ -117,5 +117,101 @@ namespace Networks.Properties {
                 this["AllowIntersection"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Газопроводы")]
+        public string GasPipeLayerName {
+            get {
+                return ((string)(this["GasPipeLayerName"]));
+            }
+            set {
+                this["GasPipeLayerName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Фундамент")]
+        public string BuildingsFoundationLayerName {
+            get {
+                return ((string)(this["BuildingsFoundationLayerName"]));
+            }
+            set {
+                this["BuildingsFoundationLayerName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Бортовой камень")]
+        public string StreetSideStoneLayerName {
+            get {
+                return ((string)(this["StreetSideStoneLayerName"]));
+            }
+            set {
+                this["StreetSideStoneLayerName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Наружная бровка")]
+        public string ExternalEdgeLayerName {
+            get {
+                return ((string)(this["ExternalEdgeLayerName"]));
+            }
+            set {
+                this["ExternalEdgeLayerName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Опора ВЛ до 1 кВ")]
+        public string HvlSupportsFoundation1LayerName {
+            get {
+                return ((string)(this["HvlSupportsFoundation1LayerName"]));
+            }
+            set {
+                this["HvlSupportsFoundation1LayerName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Опора ВЛ от 1кВ до 35 кВ")]
+        public string HvlSupportsFoundation35LayerName {
+            get {
+                return ((string)(this["HvlSupportsFoundation35LayerName"]));
+            }
+            set {
+                this["HvlSupportsFoundation35LayerName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Опора ВЛ от 35кВ")]
+        public string HvlSupportsFoundationOverLayerName {
+            get {
+                return ((string)(this["HvlSupportsFoundationOverLayerName"]));
+            }
+            set {
+                this["HvlSupportsFoundationOverLayerName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Красные линии")]
+        public string RedLineLayerName {
+            get {
+                return ((string)(this["RedLineLayerName"]));
+            }
+            set {
+                this["RedLineLayerName"] = value;
+            }
+        }
     }
 }

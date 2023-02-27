@@ -78,7 +78,7 @@ namespace Networks
             if (WaterPipesCheckBox.Checked)
                 lst.Add(Networks.WaterPipe);
             if (SewersCheckBox.Checked)
-                lst.Add(Networks.HouseholdSewer);
+                lst.Add(Networks.Sewer);
             if (PowerCablesCheckBox.Checked)
                 lst.Add(Networks.PowerCable);
             if (CommunicationLinesCheckBox.Checked)

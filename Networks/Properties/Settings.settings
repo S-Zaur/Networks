@@ -28,6 +28,30 @@
     <Setting Name="AllowIntersection" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="GasPipeLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Газопроводы</Value>
+    </Setting>
+    <Setting Name="BuildingsFoundationLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Фундамент</Value>
+    </Setting>
+    <Setting Name="StreetSideStoneLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Бортовой камень</Value>
+    </Setting>
+    <Setting Name="ExternalEdgeLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Наружная бровка</Value>
+    </Setting>
+    <Setting Name="HvlSupportsFoundation1LayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Опора ВЛ до 1 кВ</Value>
+    </Setting>
+    <Setting Name="HvlSupportsFoundation35LayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Опора ВЛ от 1кВ до 35 кВ</Value>
+    </Setting>
+    <Setting Name="HvlSupportsFoundationOverLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Опора ВЛ от 35кВ</Value>
+    </Setting>
+    <Setting Name="RedLineLayerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Красные линии</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
 

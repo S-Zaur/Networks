@@ -1,31 +1,28 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Networks
 {
-    enum Networks
+    internal enum Networks
     {
         WaterPipe,
-        HouseholdSewer,
-        RainSewer,
+        Sewer,
         PowerCable,
         CommunicationCable,
         HeatingNetworks,
-        ChannelsAndTunnels,
-        PneumoWasteChutes
+        GasPipe
     }
 
-    enum Buildings
+    internal enum Buildings
     {
         BuildingsFoundation,
-        EnterprisesFoundation,
-        Railways1520,
-        Railways750,
         StreetSideStone,
         ExternalEdge,
         HvlSupportsFoundation1,
         HvlSupportsFoundation35,
         HvlSupportsFoundationOver,
+        RedLine
     }
 
     internal static class NetworkManager
@@ -81,34 +78,40 @@ namespace Networks
         /// Матрица расстояний между коммункациями
         /// Индексы соответствуют перечислению Networks
         /// </summary>
-        private static readonly double[,] Distances = new double[,]
+        private static readonly double[,] Distances =
         {
-            { 1, 1.5, 1.5, 0.5, 0.5, 1.5, 1.5, 1.5, 1 }, // Водопровод
-            { 1.5, 0.4, 0.4, 0.5, 0.5, 1, 1, 1, 1 }, // Канализация бытовая
-            { 1.5, 0.4, 0.4, 0.5, 0.5, 1, 1, 1, 1 }, // Канализация дождевая
-            { 0.5, 0.5, 0.5, 0.1, 0.5, 2, 2, 2, 1.5 }, // Кабели силовые
-            { 0.5, 0.5, 0.5, 0.5, 0, 1, 1, 1, 1 }, // Кабели связи
-            { 1.5, 1, 1, 2, 1, 0, 0, 2, 1 }, // Теплосети от наружной стенки
-            { 1.5, 1, 1, 2, 1, 0, 0, 2, 1 }, // Теплосети от оболочки
-            { 1.5, 1, 1, 2, 1, 2, 2, 0, 1 }, // Каналы тоннели
-            { 1, 1, 1, 1.5, 1, 1, 1, 1, 0 } // Пневмомусоропроводы
+            { 1.0, 1.5, 0.5, 0.5, 1.5 }, // Водопровод
+            { 1.5, 0.4, 0.5, 0.5, 1.0 }, // Канализация
+            { 0.5, 0.5, 0.1, 0.5, 2.0 }, // Кабели силовые
+            { 0.5, 0.5, 0.5, 0.0, 1.0 }, // Кабели связи
+            { 1.5, 1.0, 2.0, 1.0, 0.0 }, // Теплосети от наружной стенки
         };
 
         /// <summary>
         /// Матрица расстояний от коммуникаций до зданий
         /// </summary>
-        private static readonly double[,] DistancesToBuildings = new double[,]
-        { 
-            //фунд фунд2жд15 жд7  бк  нбр вл1 вл35 вл>
-            { 5, 3, 4, 2.8, 2, 1, 1, 2, 3 }, // Водопровод и напорная канализация 
-            { 3, 1.5, 4, 2.8, 1.5, 1, 1, 2, 3 }, // Самотечная канализация
-            { 3, 1, 4, 2.8, 1.5, 1, 1, 2, 3 }, // Дренаж
-            { 0.4, 0.4, 0.4, 0, 0.4, 0, 0, 0, 0 }, // Сопутствующий дренаж
-            { 2, 1.5, 4, 2.8, 1.5, 1, 1, 2, 3 }, // Теплосети от наружной стенки
-            { 5, 1.5, 4, 2.8, 1.5, 1, 1, 2, 3 }, // теплосети от оболочки
-            { 0.6, 0.5, 3.2, 2.8, 1.5, 1, 0.5, 5, 10 }, // Кабели силовые и связи
-            { 2, 1.5, 4, 2.8, 1.5, 1, 1, 2, 3 }, // Каналы тоннели
-            { 2, 1, 3.8, 2.8, 1.5, 1, 1, 3, 5 } // Пневмомусоропроводы
+        private static readonly double[,] DistancesToBuildings =
+        {
+            //фунд  бк  нбр  вл1  вл35 вл>
+            { 5.0, 2.0, 1.0, 1.0, 2.0, 3.0 }, // Водопровод и напорная канализация 
+            { 2.0, 1.5, 1.0, 1.0, 2.0, 3.0 }, // Теплосети от наружной стенки
+            { 0.6, 1.5, 1.0, 0.5, 5.0, 10 }, // Кабели силовые и связи
+        };
+
+        private static readonly double[,] DistancesToGasPipe =
+        {
+            { 1.0, 1.0, 1.5, 2.0 }, // Водопровод
+            { 1.0, 1.5, 2.0, 5.0 }, // Канализация
+            { 0.2, 2.0, 2.0, 4.0 }, // Теплосети
+            { 0.4, 0.4, 0.4, 0.4 }, // Газопровод
+            { 1.0, 1.0, 1.0, 1.0 }, // Силовые кабели
+            { 1.0, 1.0, 1.0, 1.0 }, // Связь
+            { 1.0, 1.0, 1.0, 1.0 }, // Фундамент
+            { 1.0, 1.0, 1.0, 1.0 }, // Бортовой камень
+            { 1.0, 1.0, 1.0, 1.0 }, // Наружная бровка
+            { 1.0, 1.0, 1.0, 1.0 }, // Опора влэп 1
+            { 1.0, 1.0, 1.0, 1.0 }, // Опора влэп 35
+            { 1.0, 1.0, 1.0, 1.0 }, // Опора влэп >
         };
 
         /// <summary>
@@ -132,56 +135,40 @@ namespace Networks
                 case Networks.WaterPipe:
                     nw1 = 0;
                     break;
-                case Networks.HouseholdSewer:
+                case Networks.Sewer:
                     nw1 = 1;
                     break;
-                case Networks.RainSewer:
+                case Networks.PowerCable:
                     nw1 = 2;
                     break;
-                case Networks.PowerCable:
+                case Networks.CommunicationCable:
                     nw1 = 3;
                     break;
-                case Networks.CommunicationCable:
+                case Networks.HeatingNetworks:
                     nw1 = 4;
                     break;
-                case Networks.HeatingNetworks:
-                    nw1 = 5;
-                    break;
-                case Networks.ChannelsAndTunnels:
-                    nw1 = 7;
-                    break;
-                case Networks.PneumoWasteChutes:
-                    nw1 = 8;
-                    break;
             }
+
             switch (secondNetwork)
             {
                 case Networks.WaterPipe:
                     nw2 = 0;
                     break;
-                case Networks.HouseholdSewer:
+                case Networks.Sewer:
                     nw2 = 1;
                     break;
-                case Networks.RainSewer:
+                case Networks.PowerCable:
                     nw2 = 2;
                     break;
-                case Networks.PowerCable:
+                case Networks.CommunicationCable:
                     nw2 = 3;
                     break;
-                case Networks.CommunicationCable:
+                case Networks.HeatingNetworks:
                     nw2 = 4;
                     break;
-                case Networks.HeatingNetworks:
-                    nw2 = 5;
-                    break;
-                case Networks.ChannelsAndTunnels:
-                    nw2 = 7;
-                    break;
-                case Networks.PneumoWasteChutes:
-                    nw2 = 8;
-                    break;
             }
-            return Distances[nw1,nw2];
+
+            return Distances[nw1, nw2];
         }
 
         /// <summary>
@@ -193,24 +180,15 @@ namespace Networks
             switch (network)
             {
                 case Networks.WaterPipe:
-                case Networks.HouseholdSewer:
+                case Networks.Sewer:
                     nw = 0;
-                    break;
-                case Networks.RainSewer:
-                    nw = 1;
                     break;
                 case Networks.PowerCable:
                 case Networks.CommunicationCable:
-                    nw = 6;
+                    nw = 2;
                     break;
                 case Networks.HeatingNetworks:
-                    nw = 4;
-                    break;
-                case Networks.ChannelsAndTunnels:
-                    nw = 7;
-                    break;
-                case Networks.PneumoWasteChutes:
-                    nw = 8;
+                    nw = 1;
                     break;
             }
 
@@ -219,33 +197,91 @@ namespace Networks
                 case Buildings.BuildingsFoundation:
                     bld = 0;
                     break;
-                case Buildings.EnterprisesFoundation:
+                case Buildings.StreetSideStone:
                     bld = 1;
                     break;
-                case Buildings.Railways1520:
+                case Buildings.ExternalEdge:
                     bld = 2;
                     break;
-                case Buildings.Railways750:
+                case Buildings.HvlSupportsFoundation1:
                     bld = 3;
                     break;
-                case Buildings.StreetSideStone:
+                case Buildings.HvlSupportsFoundation35:
                     bld = 4;
                     break;
-                case Buildings.ExternalEdge:
-                    bld = 5;
-                    break;
-                case Buildings.HvlSupportsFoundation1:
-                    bld = 6;
-                    break;
-                case Buildings.HvlSupportsFoundation35:
-                    bld = 7;
-                    break;
                 case Buildings.HvlSupportsFoundationOver:
-                    bld = 8;
+                    bld = 5;
                     break;
             }
 
             return DistancesToBuildings[nw, bld];
+        }
+
+        public static double GetDistanceToGasPipe(double pressure, Networks network)
+        {
+            int gasPipeType;
+            if (pressure < 0.005)
+                gasPipeType = 0;
+            else if (pressure < 0.3)
+                gasPipeType = 1;
+            else if (pressure < 0.6)
+                gasPipeType = 2;
+            else
+                gasPipeType = 3;
+            int nw;
+            switch (network)
+            {
+                case Networks.WaterPipe:
+                    nw = 0;
+                    break;
+                case Networks.Sewer:
+                    nw = 1;
+                    break;
+                case Networks.PowerCable:
+                    nw = 4;
+                    break;
+                case Networks.CommunicationCable:
+                    nw = 5;
+                    break;
+                case Networks.HeatingNetworks:
+                    nw = 2;
+                    break;
+                case Networks.GasPipe:
+                    nw = 3;
+                    break;
+                default:
+                    throw new Exception("Неизвесная сеть");
+            }
+
+            return DistancesToGasPipe[nw, gasPipeType];
+        }
+
+        public static double GetDistanceToGasPipe(double pressure, Buildings building)
+        {
+            int gasPipeType;
+            if (pressure < 0.005)
+                gasPipeType = 0;
+            else if (pressure < 0.3)
+                gasPipeType = 1;
+            else if (pressure < 0.6)
+                gasPipeType = 2;
+            else
+                gasPipeType = 3;
+            int bd;
+            switch (building)
+            {
+                case Buildings.BuildingsFoundation:
+                case Buildings.StreetSideStone:
+                case Buildings.ExternalEdge:
+                case Buildings.HvlSupportsFoundation1:
+                case Buildings.HvlSupportsFoundation35:
+                case Buildings.HvlSupportsFoundationOver:
+                case Buildings.RedLine:
+                default:
+                    throw new Exception("Неизвесный объект");
+            }
+
+            return DistancesToGasPipe[bd, gasPipeType];
         }
 
         /// <summary>
@@ -280,8 +316,8 @@ namespace Networks
                     break;
             }
 
-            Distances[0,1] = distance;
-            Distances[1,0] = distance;
+            Distances[0, 1] = distance;
+            Distances[1, 0] = distance;
         }
 
         /// <summary>
@@ -322,7 +358,7 @@ namespace Networks
             // Расстояние между соседними сетями
             for (int i = 0; i < networks.Length - 1; i++)
             {
-                result[i + 1] = Distances[(int)networks[i],(int)networks[i + 1]];
+                result[i + 1] = Distances[(int)networks[i], (int)networks[i + 1]];
             }
 
             // Расстояние между не соседними сетями
@@ -331,9 +367,9 @@ namespace Networks
                 for (int j = i + 2; j < networks.Length; j++)
                 {
                     double s = result.FromToSum(i + 1, j + 1);
-                    if (s < Distances[(int)networks[i],(int)networks[j]])
+                    if (s < Distances[(int)networks[i], (int)networks[j]])
                     {
-                        double delta = Distances[(int)networks[i],(int)networks[j]] - s;
+                        double delta = Distances[(int)networks[i], (int)networks[j]] - s;
                         result[j] += delta;
                     }
                 }
@@ -348,7 +384,7 @@ namespace Networks
                     result[i + 1] += sizes[0] / 2;
                 }
 
-                if (networks[i] == Networks.HouseholdSewer)
+                if (networks[i] == Networks.Sewer)
                 {
                     result[i] += sizes[1] / 2;
                     result[i + 1] += sizes[1] / 2;
@@ -363,7 +399,7 @@ namespace Networks
 
             if (networks[networks.Length - 1] == Networks.WaterPipe)
                 result[networks.Length - 1] += sizes[0] / 2;
-            if (networks[networks.Length - 1] == Networks.HouseholdSewer)
+            if (networks[networks.Length - 1] == Networks.Sewer)
                 result[networks.Length - 1] += sizes[1] / 2;
             if (networks[networks.Length - 1] == Networks.HeatingNetworks)
                 result[networks.Length - 1] += sizes[2] / 2;
@@ -388,7 +424,7 @@ namespace Networks
         {
             if (NetworksMap.ContainsKey(typeName))
                 return NetworksMap[typeName];
-            return Networks.ChannelsAndTunnels;
+            throw new Exception();
         }
 
         /// <summary>
@@ -398,17 +434,19 @@ namespace Networks
         {
             LayerNames.Clear();
             LayerNames[Networks.WaterPipe] = Properties.Settings.Default.WaterPipeLayerName;
-            LayerNames[Networks.HouseholdSewer] = Properties.Settings.Default.SewerLayerName;
+            LayerNames[Networks.Sewer] = Properties.Settings.Default.SewerLayerName;
             LayerNames[Networks.HeatingNetworks] = Properties.Settings.Default.HeatingNetworkLayerName;
             LayerNames[Networks.CommunicationCable] = Properties.Settings.Default.CommunicationCableLayerName;
             LayerNames[Networks.PowerCable] = Properties.Settings.Default.PowerCableLayerName;
+            LayerNames[Networks.GasPipe] = Properties.Settings.Default.GasPipeLayerName;
 
             NetworksMap.Clear();
             NetworksMap[Properties.Settings.Default.WaterPipeLayerName] = Networks.WaterPipe;
-            NetworksMap[Properties.Settings.Default.SewerLayerName] = Networks.HouseholdSewer;
+            NetworksMap[Properties.Settings.Default.SewerLayerName] = Networks.Sewer;
             NetworksMap[Properties.Settings.Default.HeatingNetworkLayerName] = Networks.HeatingNetworks;
             NetworksMap[Properties.Settings.Default.CommunicationCableLayerName] = Networks.CommunicationCable;
             NetworksMap[Properties.Settings.Default.PowerCableLayerName] = Networks.PowerCable;
+            NetworksMap[Properties.Settings.Default.GasPipeLayerName] = Networks.GasPipe;
         }
     }
 }
