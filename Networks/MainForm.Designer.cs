@@ -47,12 +47,15 @@
             this.DrawByPointsButton = new System.Windows.Forms.Button();
             this.SimplifyPolylineCheckBox = new System.Windows.Forms.CheckBox();
             this.AllowIntersectionCheckBox = new System.Windows.Forms.CheckBox();
+            this.GasPipeCheckBox = new System.Windows.Forms.CheckBox();
+            this.GasPipePressureTextBox = new System.Windows.Forms.TextBox();
+            this.PressureLabel = new System.Windows.Forms.Label();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // DrawByLineButton
             // 
-            this.DrawByLineButton.Location = new System.Drawing.Point(33, 197);
+            this.DrawByLineButton.Location = new System.Drawing.Point(31, 246);
             this.DrawByLineButton.Name = "DrawByLineButton";
             this.DrawByLineButton.Size = new System.Drawing.Size(102, 28);
             this.DrawByLineButton.TabIndex = 0;
@@ -185,7 +188,7 @@
             // 
             // DrawByAreaButton
             // 
-            this.DrawByAreaButton.Location = new System.Drawing.Point(141, 197);
+            this.DrawByAreaButton.Location = new System.Drawing.Point(139, 246);
             this.DrawByAreaButton.Name = "DrawByAreaButton";
             this.DrawByAreaButton.Size = new System.Drawing.Size(102, 28);
             this.DrawByAreaButton.TabIndex = 14;
@@ -195,7 +198,7 @@
             // 
             // DrawByPointsButton
             // 
-            this.DrawByPointsButton.Location = new System.Drawing.Point(249, 197);
+            this.DrawByPointsButton.Location = new System.Drawing.Point(247, 246);
             this.DrawByPointsButton.Name = "DrawByPointsButton";
             this.DrawByPointsButton.Size = new System.Drawing.Size(102, 28);
             this.DrawByPointsButton.TabIndex = 15;
@@ -207,7 +210,7 @@
             // 
             this.SimplifyPolylineCheckBox.Checked = true;
             this.SimplifyPolylineCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.SimplifyPolylineCheckBox.Location = new System.Drawing.Point(12, 239);
+            this.SimplifyPolylineCheckBox.Location = new System.Drawing.Point(10, 288);
             this.SimplifyPolylineCheckBox.Name = "SimplifyPolylineCheckBox";
             this.SimplifyPolylineCheckBox.Size = new System.Drawing.Size(143, 24);
             this.SimplifyPolylineCheckBox.TabIndex = 16;
@@ -218,7 +221,7 @@
             // AllowIntersectionCheckBox
             // 
             this.AllowIntersectionCheckBox.Enabled = false;
-            this.AllowIntersectionCheckBox.Location = new System.Drawing.Point(161, 239);
+            this.AllowIntersectionCheckBox.Location = new System.Drawing.Point(159, 288);
             this.AllowIntersectionCheckBox.Name = "AllowIntersectionCheckBox";
             this.AllowIntersectionCheckBox.Size = new System.Drawing.Size(224, 24);
             this.AllowIntersectionCheckBox.TabIndex = 17;
@@ -226,11 +229,39 @@
             this.AllowIntersectionCheckBox.UseVisualStyleBackColor = true;
             this.AllowIntersectionCheckBox.CheckedChanged += new System.EventHandler(this.AllowIntersectionCheckBox_CheckedChanged);
             // 
+            // GasPipeCheckBox
+            // 
+            this.GasPipeCheckBox.Location = new System.Drawing.Point(12, 197);
+            this.GasPipeCheckBox.Name = "GasPipeCheckBox";
+            this.GasPipeCheckBox.Size = new System.Drawing.Size(139, 24);
+            this.GasPipeCheckBox.TabIndex = 18;
+            this.GasPipeCheckBox.Text = "Газопровод";
+            this.GasPipeCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // GasPipePressureTextBox
+            // 
+            this.GasPipePressureTextBox.Location = new System.Drawing.Point(160, 197);
+            this.GasPipePressureTextBox.Name = "GasPipePressureTextBox";
+            this.GasPipePressureTextBox.Size = new System.Drawing.Size(100, 22);
+            this.GasPipePressureTextBox.TabIndex = 19;
+            this.GasPipePressureTextBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.TextBox_KeyPress);
+            // 
+            // PressureLabel
+            // 
+            this.PressureLabel.Location = new System.Drawing.Point(160, 171);
+            this.PressureLabel.Name = "PressureLabel";
+            this.PressureLabel.Size = new System.Drawing.Size(100, 23);
+            this.PressureLabel.TabIndex = 20;
+            this.PressureLabel.Text = "Давление";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(397, 273);
+            this.ClientSize = new System.Drawing.Size(397, 323);
+            this.Controls.Add(this.PressureLabel);
+            this.Controls.Add(this.GasPipePressureTextBox);
+            this.Controls.Add(this.GasPipeCheckBox);
             this.Controls.Add(this.AllowIntersectionCheckBox);
             this.Controls.Add(this.SimplifyPolylineCheckBox);
             this.Controls.Add(this.DrawByPointsButton);
@@ -250,9 +281,9 @@
             this.Controls.Add(this.DrawByLineButton);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
-            this.MaximumSize = new System.Drawing.Size(415, 320);
+            this.MaximumSize = new System.Drawing.Size(415, 370);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(415, 320);
+            this.MinimumSize = new System.Drawing.Size(415, 370);
             this.Name = "MainForm";
             this.Text = "Коридоры для сетей";
             this.menuStrip1.ResumeLayout(false);
@@ -260,6 +291,12 @@
             this.ResumeLayout(false);
             this.PerformLayout();
         }
+
+        private System.Windows.Forms.Label PressureLabel;
+
+        private System.Windows.Forms.TextBox GasPipePressureTextBox;
+
+        private System.Windows.Forms.CheckBox GasPipeCheckBox;
 
         private System.Windows.Forms.CheckBox SimplifyPolylineCheckBox;
         private System.Windows.Forms.CheckBox AllowIntersectionCheckBox;

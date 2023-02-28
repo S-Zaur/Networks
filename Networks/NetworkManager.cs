@@ -74,6 +74,8 @@ namespace Networks
             }
         }
 
+        private static int _gasPipeType = 0;
+
         /// <summary>
         /// Матрица расстояний между коммункациями
         /// Индексы соответствуют перечислению Networks
@@ -92,26 +94,27 @@ namespace Networks
         /// </summary>
         private static readonly double[,] DistancesToBuildings =
         {
-            //фунд  бк  нбр  вл1  вл35 вл>
-            { 5.0, 2.0, 1.0, 1.0, 2.0, 3.0 }, // Водопровод и напорная канализация 
-            { 2.0, 1.5, 1.0, 1.0, 2.0, 3.0 }, // Теплосети от наружной стенки
-            { 0.6, 1.5, 1.0, 0.5, 5.0, 10 }, // Кабели силовые и связи
+            //фунд  бк  нбр  вл1  вл35 вл>  кр.лин
+            { 5.0, 2.0, 1.0, 1.0, 2.0, 3.0, 0.1 }, // Водопровод и напорная канализация 
+            { 2.0, 1.5, 1.0, 1.0, 2.0, 3.0, 0.1 }, // Теплосети от наружной стенки
+            { 0.6, 1.5, 1.0, 0.5, 5.0, 10, 0.1 }, // Кабели силовые и связи
         };
 
         private static readonly double[,] DistancesToGasPipe =
         {
             { 1.0, 1.0, 1.5, 2.0 }, // Водопровод
             { 1.0, 1.5, 2.0, 5.0 }, // Канализация
+            { 1.0, 1.0, 1.0, 2.0 }, // Силовые кабели
+            { 1.0, 1.0, 1.0, 1.0 }, // Связь
             { 0.2, 2.0, 2.0, 4.0 }, // Теплосети
             { 0.4, 0.4, 0.4, 0.4 }, // Газопровод
-            { 1.0, 1.0, 1.0, 1.0 }, // Силовые кабели
-            { 1.0, 1.0, 1.0, 1.0 }, // Связь
-            { 1.0, 1.0, 1.0, 1.0 }, // Фундамент
-            { 1.0, 1.0, 1.0, 1.0 }, // Бортовой камень
+            { 2.0, 4.0, 7.0, 10.0 }, // Фундамент
+            { 1.5, 1.5, 2.5, 2.5 }, // Бортовой камень
             { 1.0, 1.0, 1.0, 1.0 }, // Наружная бровка
             { 1.0, 1.0, 1.0, 1.0 }, // Опора влэп 1
             { 1.0, 1.0, 1.0, 1.0 }, // Опора влэп 35
             { 1.0, 1.0, 1.0, 1.0 }, // Опора влэп >
+            { 0.1, 0.1, 0.1, 0.1 }, // Красная линия
         };
 
         /// <summary>
@@ -129,46 +132,11 @@ namespace Networks
         /// </summary>
         public static double GetDistance(Networks firstNetwork, Networks secondNetwork)
         {
-            int nw1 = 0, nw2 = 0;
-            switch (firstNetwork)
-            {
-                case Networks.WaterPipe:
-                    nw1 = 0;
-                    break;
-                case Networks.Sewer:
-                    nw1 = 1;
-                    break;
-                case Networks.PowerCable:
-                    nw1 = 2;
-                    break;
-                case Networks.CommunicationCable:
-                    nw1 = 3;
-                    break;
-                case Networks.HeatingNetworks:
-                    nw1 = 4;
-                    break;
-            }
-
-            switch (secondNetwork)
-            {
-                case Networks.WaterPipe:
-                    nw2 = 0;
-                    break;
-                case Networks.Sewer:
-                    nw2 = 1;
-                    break;
-                case Networks.PowerCable:
-                    nw2 = 2;
-                    break;
-                case Networks.CommunicationCable:
-                    nw2 = 3;
-                    break;
-                case Networks.HeatingNetworks:
-                    nw2 = 4;
-                    break;
-            }
-
-            return Distances[nw1, nw2];
+            if (firstNetwork == Networks.GasPipe)
+                return DistancesToGasPipe[(int)secondNetwork, _gasPipeType];
+            if (secondNetwork == Networks.GasPipe)
+                return DistancesToGasPipe[(int)firstNetwork, _gasPipeType];
+            return Distances[(int)firstNetwork, (int)secondNetwork];
         }
 
         /// <summary>
@@ -176,112 +144,31 @@ namespace Networks
         /// </summary>
         public static double GetDistanceToBuilding(Networks network, Buildings building)
         {
-            int nw = 0, bld = 0;
-            switch (network)
+            if (network == Networks.GasPipe)
             {
-                case Networks.WaterPipe:
-                case Networks.Sewer:
-                    nw = 0;
-                    break;
-                case Networks.PowerCable:
-                case Networks.CommunicationCable:
-                    nw = 2;
-                    break;
-                case Networks.HeatingNetworks:
-                    nw = 1;
-                    break;
+                return DistancesToGasPipe[(int)building + 6, _gasPipeType];
             }
 
-            switch (building)
-            {
-                case Buildings.BuildingsFoundation:
-                    bld = 0;
-                    break;
-                case Buildings.StreetSideStone:
-                    bld = 1;
-                    break;
-                case Buildings.ExternalEdge:
-                    bld = 2;
-                    break;
-                case Buildings.HvlSupportsFoundation1:
-                    bld = 3;
-                    break;
-                case Buildings.HvlSupportsFoundation35:
-                    bld = 4;
-                    break;
-                case Buildings.HvlSupportsFoundationOver:
-                    bld = 5;
-                    break;
-            }
-
-            return DistancesToBuildings[nw, bld];
-        }
-
-        public static double GetDistanceToGasPipe(double pressure, Networks network)
-        {
-            int gasPipeType;
-            if (pressure < 0.005)
-                gasPipeType = 0;
-            else if (pressure < 0.3)
-                gasPipeType = 1;
-            else if (pressure < 0.6)
-                gasPipeType = 2;
-            else
-                gasPipeType = 3;
             int nw;
             switch (network)
             {
                 case Networks.WaterPipe:
+                case Networks.Sewer:
                     nw = 0;
                     break;
-                case Networks.Sewer:
+                case Networks.HeatingNetworks:
                     nw = 1;
                     break;
                 case Networks.PowerCable:
-                    nw = 4;
-                    break;
                 case Networks.CommunicationCable:
-                    nw = 5;
-                    break;
-                case Networks.HeatingNetworks:
                     nw = 2;
                     break;
                 case Networks.GasPipe:
-                    nw = 3;
-                    break;
                 default:
                     throw new Exception("Неизвесная сеть");
             }
 
-            return DistancesToGasPipe[nw, gasPipeType];
-        }
-
-        public static double GetDistanceToGasPipe(double pressure, Buildings building)
-        {
-            int gasPipeType;
-            if (pressure < 0.005)
-                gasPipeType = 0;
-            else if (pressure < 0.3)
-                gasPipeType = 1;
-            else if (pressure < 0.6)
-                gasPipeType = 2;
-            else
-                gasPipeType = 3;
-            int bd;
-            switch (building)
-            {
-                case Buildings.BuildingsFoundation:
-                case Buildings.StreetSideStone:
-                case Buildings.ExternalEdge:
-                case Buildings.HvlSupportsFoundation1:
-                case Buildings.HvlSupportsFoundation35:
-                case Buildings.HvlSupportsFoundationOver:
-                case Buildings.RedLine:
-                default:
-                    throw new Exception("Неизвесный объект");
-            }
-
-            return DistancesToGasPipe[bd, gasPipeType];
+            return DistancesToBuildings[nw, (int)building];
         }
 
         /// <summary>
@@ -318,6 +205,18 @@ namespace Networks
 
             Distances[0, 1] = distance;
             Distances[1, 0] = distance;
+        }
+
+        public static void SetGasPipePressure(double pressure)
+        {
+            if (pressure < 0.005)
+                _gasPipeType = 0;
+            else if (pressure < 0.3)
+                _gasPipeType = 1;
+            else if (pressure < 0.6)
+                _gasPipeType = 2;
+            else
+                _gasPipeType = 3;
         }
 
         /// <summary>

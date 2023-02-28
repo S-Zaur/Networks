@@ -56,6 +56,9 @@ namespace Networks
                 WaterPipeTypeComboBox.SelectedItem.ToString(),
                 double.Parse(WaterPipesSizeTextBox.Text == "" ? "0" : WaterPipesSizeTextBox.Text)
             );
+            NetworkManager.SetGasPipePressure(
+                double.Parse(GasPipePressureTextBox.Text==""?"0":GasPipePressureTextBox.Text)
+                );
 
             WindowState = FormWindowState.Minimized;
 
@@ -85,6 +88,8 @@ namespace Networks
                 lst.Add(Networks.CommunicationCable);
             if (HeatingNetworksCheckBox.Checked)
                 lst.Add(Networks.HeatingNetworks);
+            if (GasPipeCheckBox.Checked)
+                lst.Add(Networks.GasPipe);
             return lst.ToArray();
         }
 
@@ -111,6 +116,9 @@ namespace Networks
                 WaterPipeTypeComboBox.SelectedItem.ToString(),
                 double.Parse(WaterPipesSizeTextBox.Text == "" ? "0" : WaterPipesSizeTextBox.Text)
             );
+            NetworkManager.SetGasPipePressure(
+                double.Parse(GasPipePressureTextBox.Text==""?"0":GasPipePressureTextBox.Text)
+            );
 
             WindowState = FormWindowState.Minimized;
 
@@ -133,6 +141,10 @@ namespace Networks
                 WaterPipeTypeComboBox.SelectedItem.ToString(),
                 double.Parse(WaterPipesSizeTextBox.Text == "" ? "0" : WaterPipesSizeTextBox.Text)
             );
+            NetworkManager.SetGasPipePressure(
+                double.Parse(GasPipePressureTextBox.Text==""?"0":GasPipePressureTextBox.Text)
+            );
+            
             var networks = CreateNetworkArray();
             if (networks.Length == 0)
                 return;
