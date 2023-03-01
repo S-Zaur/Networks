@@ -444,5 +444,48 @@ namespace Networks
             }
             return result;
         }
+        public static Polyline Join(this Polyline firstPolyline, Polyline secondPolyline)
+        {
+            var polylineCopy = firstPolyline.Clone() as Polyline;
+            if (polylineCopy is null)
+                return new Polyline();
+
+            for (int i = 0; i < secondPolyline.NumberOfVertices; i++)
+            {
+                polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices,
+                    secondPolyline.GetPoint2dAt(i),0,0,0);
+            }
+
+            return polylineCopy;
+        }
+        public static Polyline Join(this Polyline polyline, Line line)
+        {
+            var polylineCopy = polyline.Clone() as Polyline;
+            if (polylineCopy is null)
+                return new Polyline();
+
+            polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices,line.StartPoint.Convert2d(new Plane()),0,0,0);
+            polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices,line.EndPoint.Convert2d(new Plane()),0,0,0);
+
+            return polylineCopy;
+        }
+        public static Polyline Join(this Line line, Polyline polyline)
+        {
+            return polyline.Join(line);
+        }
+        public static Polyline Join(this Line firstLine, Line secondLine)
+        {
+            Polyline result = new Polyline()
+            {
+                Layer = firstLine.Layer
+            };
+
+            result.AddVertexAt(0,firstLine.StartPoint.Convert2d(new Plane()),0,0,0);
+            result.AddVertexAt(1,firstLine.EndPoint.Convert2d(new Plane()),0,0,0);
+            result.AddVertexAt(2,secondLine.StartPoint.Convert2d(new Plane()),0,0,0);
+            result.AddVertexAt(3,secondLine.EndPoint.Convert2d(new Plane()),0,0,0);
+            
+            return result;
+        }
     }
 }
