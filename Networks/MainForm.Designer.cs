@@ -45,11 +45,11 @@
             this.TypeLabel = new System.Windows.Forms.Label();
             this.DrawByAreaButton = new System.Windows.Forms.Button();
             this.DrawByPointsButton = new System.Windows.Forms.Button();
-            this.SimplifyPolylineCheckBox = new System.Windows.Forms.CheckBox();
             this.AllowIntersectionCheckBox = new System.Windows.Forms.CheckBox();
             this.GasPipeCheckBox = new System.Windows.Forms.CheckBox();
             this.GasPipePressureTextBox = new System.Windows.Forms.TextBox();
             this.PressureLabel = new System.Windows.Forms.Label();
+            this.DrawButton = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -61,7 +61,7 @@
             this.DrawByLineButton.TabIndex = 0;
             this.DrawByLineButton.Text = "Вдоль линии";
             this.DrawByLineButton.UseVisualStyleBackColor = true;
-            this.DrawByLineButton.Click += new System.EventHandler(this.DrawButton_Click);
+            this.DrawByLineButton.Click += new System.EventHandler(this.DrawByLineButton_Click);
             // 
             // WaterPipesCheckBox
             // 
@@ -70,8 +70,10 @@
             this.WaterPipesCheckBox.Name = "WaterPipesCheckBox";
             this.WaterPipesCheckBox.Size = new System.Drawing.Size(120, 21);
             this.WaterPipesCheckBox.TabIndex = 1;
+            this.WaterPipesCheckBox.Tag = "Водопровод";
             this.WaterPipesCheckBox.Text = "Водопроводы";
             this.WaterPipesCheckBox.UseVisualStyleBackColor = true;
+            this.WaterPipesCheckBox.CheckedChanged += new System.EventHandler(this.CheckBox_CheckedChanged);
             // 
             // SewersCheckBox
             // 
@@ -80,8 +82,10 @@
             this.SewersCheckBox.Name = "SewersCheckBox";
             this.SewersCheckBox.Size = new System.Drawing.Size(118, 21);
             this.SewersCheckBox.TabIndex = 2;
+            this.SewersCheckBox.Tag = "Канализация";
             this.SewersCheckBox.Text = "Канализации";
             this.SewersCheckBox.UseVisualStyleBackColor = true;
+            this.SewersCheckBox.CheckedChanged += new System.EventHandler(this.CheckBox_CheckedChanged);
             // 
             // HeatingNetworksCheckBox
             // 
@@ -90,8 +94,10 @@
             this.HeatingNetworksCheckBox.Name = "HeatingNetworksCheckBox";
             this.HeatingNetworksCheckBox.Size = new System.Drawing.Size(101, 21);
             this.HeatingNetworksCheckBox.TabIndex = 3;
+            this.HeatingNetworksCheckBox.Tag = "Теплосеть";
             this.HeatingNetworksCheckBox.Text = "Теплосети";
             this.HeatingNetworksCheckBox.UseVisualStyleBackColor = true;
+            this.HeatingNetworksCheckBox.CheckedChanged += new System.EventHandler(this.CheckBox_CheckedChanged);
             // 
             // CommunicationLinesCheckBox
             // 
@@ -100,8 +106,10 @@
             this.CommunicationLinesCheckBox.Name = "CommunicationLinesCheckBox";
             this.CommunicationLinesCheckBox.Size = new System.Drawing.Size(113, 21);
             this.CommunicationLinesCheckBox.TabIndex = 4;
+            this.CommunicationLinesCheckBox.Tag = "Линия связи";
             this.CommunicationLinesCheckBox.Text = "Линии связи";
             this.CommunicationLinesCheckBox.UseVisualStyleBackColor = true;
+            this.CommunicationLinesCheckBox.CheckedChanged += new System.EventHandler(this.CheckBox_CheckedChanged);
             // 
             // PowerCablesCheckBox
             // 
@@ -110,8 +118,10 @@
             this.PowerCablesCheckBox.Name = "PowerCablesCheckBox";
             this.PowerCablesCheckBox.Size = new System.Drawing.Size(139, 21);
             this.PowerCablesCheckBox.TabIndex = 5;
+            this.PowerCablesCheckBox.Tag = "Силовой кабель";
             this.PowerCablesCheckBox.Text = "Силовые кабели";
             this.PowerCablesCheckBox.UseVisualStyleBackColor = true;
+            this.PowerCablesCheckBox.CheckedChanged += new System.EventHandler(this.CheckBox_CheckedChanged);
             // 
             // SewersSizeTextBox
             // 
@@ -206,22 +216,10 @@
             this.DrawByPointsButton.UseVisualStyleBackColor = true;
             this.DrawByPointsButton.Click += new System.EventHandler(this.DrawByPointsButton_Click);
             // 
-            // SimplifyPolylineCheckBox
-            // 
-            this.SimplifyPolylineCheckBox.Checked = true;
-            this.SimplifyPolylineCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.SimplifyPolylineCheckBox.Location = new System.Drawing.Point(10, 288);
-            this.SimplifyPolylineCheckBox.Name = "SimplifyPolylineCheckBox";
-            this.SimplifyPolylineCheckBox.Size = new System.Drawing.Size(143, 24);
-            this.SimplifyPolylineCheckBox.TabIndex = 16;
-            this.SimplifyPolylineCheckBox.Text = "Упрощать линию";
-            this.SimplifyPolylineCheckBox.UseVisualStyleBackColor = true;
-            this.SimplifyPolylineCheckBox.CheckedChanged += new System.EventHandler(this.SimplifyPolylineCheckBox_CheckedChanged);
-            // 
             // AllowIntersectionCheckBox
             // 
             this.AllowIntersectionCheckBox.Enabled = false;
-            this.AllowIntersectionCheckBox.Location = new System.Drawing.Point(159, 288);
+            this.AllowIntersectionCheckBox.Location = new System.Drawing.Point(17, 280);
             this.AllowIntersectionCheckBox.Name = "AllowIntersectionCheckBox";
             this.AllowIntersectionCheckBox.Size = new System.Drawing.Size(224, 24);
             this.AllowIntersectionCheckBox.TabIndex = 17;
@@ -235,8 +233,10 @@
             this.GasPipeCheckBox.Name = "GasPipeCheckBox";
             this.GasPipeCheckBox.Size = new System.Drawing.Size(139, 24);
             this.GasPipeCheckBox.TabIndex = 18;
+            this.GasPipeCheckBox.Tag = "Газопровод";
             this.GasPipeCheckBox.Text = "Газопровод";
             this.GasPipeCheckBox.UseVisualStyleBackColor = true;
+            this.GasPipeCheckBox.CheckedChanged += new System.EventHandler(this.CheckBox_CheckedChanged);
             // 
             // GasPipePressureTextBox
             // 
@@ -254,16 +254,26 @@
             this.PressureLabel.TabIndex = 20;
             this.PressureLabel.Text = "Давление";
             // 
+            // DrawButton
+            // 
+            this.DrawButton.Location = new System.Drawing.Point(247, 280);
+            this.DrawButton.Name = "DrawButton";
+            this.DrawButton.Size = new System.Drawing.Size(102, 23);
+            this.DrawButton.TabIndex = 21;
+            this.DrawButton.Text = "Нарисовать";
+            this.DrawButton.UseVisualStyleBackColor = true;
+            this.DrawButton.Click += new System.EventHandler(this.DrawButton_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(397, 323);
+            this.Controls.Add(this.DrawButton);
             this.Controls.Add(this.PressureLabel);
             this.Controls.Add(this.GasPipePressureTextBox);
             this.Controls.Add(this.GasPipeCheckBox);
             this.Controls.Add(this.AllowIntersectionCheckBox);
-            this.Controls.Add(this.SimplifyPolylineCheckBox);
             this.Controls.Add(this.DrawByPointsButton);
             this.Controls.Add(this.DrawByAreaButton);
             this.Controls.Add(this.TypeLabel);
@@ -292,13 +302,14 @@
             this.PerformLayout();
         }
 
+        private System.Windows.Forms.Button DrawButton;
+
         private System.Windows.Forms.Label PressureLabel;
 
         private System.Windows.Forms.TextBox GasPipePressureTextBox;
 
         private System.Windows.Forms.CheckBox GasPipeCheckBox;
 
-        private System.Windows.Forms.CheckBox SimplifyPolylineCheckBox;
         private System.Windows.Forms.CheckBox AllowIntersectionCheckBox;
 
         private System.Windows.Forms.Button DrawByPointsButton;

@@ -337,12 +337,6 @@ namespace Networks
             using (DocumentLock _ = acDoc.LockDocument())
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
-                BlockTable acBlkTbl = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-                if (acBlkTbl is null) return;
-                BlockTableRecord acBlkTblRec =
-                    tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-                if (acBlkTblRec is null) return;
-
                 Line line1 = tr.GetObject(id1, OpenMode.ForRead) as Line;
                 Line line2 = tr.GetObject(id2, OpenMode.ForRead) as Line;
                 Curve[] ignores = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve).ToArray();
@@ -426,14 +420,12 @@ namespace Networks
                     }
 
                     var newLine = AutocadHelper.ConnectPoints(point1, point2, currentIgnores, distanceToIgnores);
-                    if (Properties.Settings.Default.SimplifyPolyline)
-                        while (newLine.Simplify(ignores, distanceToIgnores) != 0)
-                        {
-                        }
+                    while (newLine.Simplify(ignores, distanceToIgnores) != 0)
+                    {
+                    }
 
                     newLine.Layer = NetworkManager.GetNetworkName(networks[i]);
-                    acBlkTblRec.AppendEntity(newLine);
-                    tr.AddNewlyCreatedDBObject(newLine, true);
+                    tr.Draw(newLine);
                     ignores = ignores.Append(newLine).ToArray();
                 }
 

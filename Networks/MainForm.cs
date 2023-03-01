@@ -6,20 +6,24 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
+using Autodesk.AutoCAD.Geometry;
 
 namespace Networks
 {
     [SuppressMessage("ReSharper", "LocalizableElement")]
     public partial class MainForm : Form
     {
-        private static readonly DateTime StopDate = new DateTime(2023, 3, 1);
+        private static readonly DateTime StopDate = new DateTime(2023, 3, 7);
+
+        private readonly Dictionary<Networks, Pair<Point3d, Point3d>> _points = new Dictionary<Networks, Pair<Point3d, Point3d>>();
 
         private static DateTime GetCurrentDate()
         {
             try
             {
                 using (var response =
-                       WebRequest.Create("http://www.google.com").GetResponse())
+                       WebRequest.Create("https://www.google.com").GetResponse())
                     //string todaysDates =  response.Headers["date"];
                     return DateTime.ParseExact(response.Headers["date"],
                         "ddd, dd MMM yyyy HH:mm:ss 'GMT'",
@@ -48,9 +52,15 @@ namespace Networks
 
             NetworkManager.SetLayers();
             AutocadHelper.CheckLayers();
+            WaterPipesCheckBox.Tag = Networks.WaterPipe;
+            SewersCheckBox.Tag = Networks.Sewer;
+            HeatingNetworksCheckBox.Tag = Networks.HeatingNetworks;
+            CommunicationLinesCheckBox.Tag = Networks.CommunicationCable;
+            PowerCablesCheckBox.Tag = Networks.PowerCable;
+            GasPipeCheckBox.Tag = Networks.GasPipe;
         }
 
-        private void DrawButton_Click(object sender, EventArgs e)
+        private void DrawByLineButton_Click(object sender, EventArgs e)
         {
             NetworkManager.SetPipeType(
                 WaterPipeTypeComboBox.SelectedItem.ToString(),
@@ -62,7 +72,7 @@ namespace Networks
 
             WindowState = FormWindowState.Minimized;
 
-            AutocadHelper.DrawNetworksByLine(
+            AutocadHelperOld.DrawNetworksByLine(
                 CreateNetworkArray(),
                 new[]
                 {
@@ -122,7 +132,7 @@ namespace Networks
 
             WindowState = FormWindowState.Minimized;
 
-            AutocadHelper.DrawNetworksByArea(
+            AutocadHelperOld.DrawNetworksByArea(
                 CreateNetworkArray(),
                 new[]
                 {
@@ -169,16 +179,59 @@ namespace Networks
             WindowState = FormWindowState.Normal;
         }
 
-        private void SimplifyPolylineCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            Properties.Settings.Default.SimplifyPolyline = SimplifyPolylineCheckBox.Checked;
-            Properties.Settings.Default.Save();
-        }
-
         private void AllowIntersectionCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             Properties.Settings.Default.AllowIntersection = AllowIntersectionCheckBox.Checked;
             Properties.Settings.Default.Save();
+        }
+
+        private void CheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            var checkBox = sender as CheckBox;
+            if (checkBox is null)
+                return;
+            if (!checkBox.Checked)
+            {
+                _points.Remove((Networks)checkBox.Tag);
+                return;
+            }
+            try
+            {
+                WindowState = FormWindowState.Minimized;
+                var points = AutocadHelper.GetStartEndPoints();
+                WindowState = FormWindowState.Normal;
+                _points.Add((Networks)checkBox.Tag, points);
+            }
+            catch
+            {
+                checkBox.Checked = false;
+                WindowState = FormWindowState.Normal;
+            }
+        }
+
+        private void DrawButton_Click(object sender, EventArgs e)
+        {
+            NetworkManager.SetPipeType(
+                WaterPipeTypeComboBox.SelectedItem.ToString(),
+                double.Parse(WaterPipesSizeTextBox.Text == "" ? "0" : WaterPipesSizeTextBox.Text)
+            );
+            NetworkManager.SetGasPipePressure(
+                double.Parse(GasPipePressureTextBox.Text==""?"0":GasPipePressureTextBox.Text)
+            );
+
+            WindowState = FormWindowState.Minimized;
+
+            AutocadHelper.DrawNetworks(
+                _points,
+                new[]
+                {
+                    double.Parse(WaterPipesSizeTextBox.Text == "" ? "0" : WaterPipesSizeTextBox.Text) / 1000,
+                    double.Parse(SewersSizeTextBox.Text == "" ? "0" : SewersSizeTextBox.Text) / 1000,
+                    double.Parse(HeatingNetworksSizeTextBox.Text == "" ? "0" : HeatingNetworksSizeTextBox.Text) / 1000
+                }
+            );
+
+            WindowState = FormWindowState.Normal;
         }
     }
 }

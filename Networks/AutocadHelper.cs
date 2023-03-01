@@ -204,14 +204,102 @@ namespace Networks
                 }
                 
                 var newLine = ConnectPoints(point1, point2, ignores, distanceToIgnores);
-                if (Properties.Settings.Default.SimplifyPolyline)
-                    while (newLine.Simplify(ignores, distanceToIgnores) != 0)
-                    {
-                    }
+                while (newLine.Simplify(ignores, distanceToIgnores) != 0)
+                {
+                }
                 
                 newLine.Layer = NetworkManager.GetNetworkName(network);
                 acBlkTblRec.AppendEntity(newLine);
                 tr.AddNewlyCreatedDBObject(newLine, true);
+
+                tr.Commit();
+            }
+        }
+
+        public static void DrawNetworks(Dictionary<Networks, Pair<Point3d, Point3d>> points, double[] sizes)
+        {
+            #region Init
+            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
+            Database db = acDoc.Database;
+            Editor ed = acDoc.Editor;
+
+            // Существующие сети которые нужно учесть
+            var filterList = new[]
+            {
+                new TypedValue(-4, "<OR"),
+                new TypedValue(0, "LINE"),
+                new TypedValue(0, "LWPOLYLINE"),
+                new TypedValue(-4, "OR>")
+            };
+            SelectionFilter filter = new SelectionFilter(filterList);
+            PromptSelectionOptions selectionOptions = new PromptSelectionOptions
+            {
+                MessageForAdding = "Выберите коммуникации которые необходимо учесть(необязательно)"
+            };
+            PromptSelectionResult selRes = ed.GetSelection(selectionOptions, filter);
+            ObjectId[] objectIds = selRes.Status != PromptStatus.OK
+                ? Array.Empty<ObjectId>()
+                : selRes.Value.GetObjectIds();
+
+            #endregion
+
+            using (DocumentLock _ = acDoc.LockDocument())
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                Curve[] ignores = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve).ToArray();
+                ignores = ignores.Select(x => x is Polyline ? (x as Polyline).Jarvis() : x).ToArray();
+
+                foreach (var pair in points)
+                {
+                    var network = pair.Key;
+                    var currentIgnores = ignores.Select(x => x).ToArray();
+                    double[] distanceToIgnores = ignores.Select(x => NetworkManager.GetDistance(network,
+                        NetworkManager.GetType(x.Layer))).ToArray();
+
+                    if (network == Networks.WaterPipe && sizes[0] != 0)
+                        distanceToIgnores = distanceToIgnores.Select(x => x + sizes[0] / 2).ToArray();
+                    if (network == Networks.Sewer && sizes[1] != 0)
+                        distanceToIgnores = distanceToIgnores.Select(x => x + sizes[1] / 2).ToArray();
+                    if (network == Networks.HeatingNetworks && sizes[2] != 0)
+                        distanceToIgnores = distanceToIgnores.Select(x => x + sizes[2] / 2).ToArray();
+
+                    var ignoresCount = ignores.Length;
+
+                    for (int j = 0; j < ignoresCount; j++)
+                    {
+                        for (int k = j + 1; k < ignoresCount; k++)
+                        {
+                            var ignoreA = ignores[j];
+                            var ignoreB = ignores[k];
+                            var distanceBetween = ignoreA.GetMinDistanceToCurve(ignoreB);
+                            var distanceA = distanceToIgnores[j];
+                            var distanceB = distanceToIgnores[k];
+                            if (distanceA + distanceB > distanceBetween)
+                            {
+                                Polyline additionalPolyline;
+                                if (ignoreA is Polyline && ignoreB is Polyline)
+                                    additionalPolyline = (ignoreA as Polyline).Join(ignoreB as Polyline).Jarvis();
+                                else if (ignoreA is Polyline && ignoreB is Line)
+                                    additionalPolyline = (ignoreA as Polyline).Join(ignoreB as Line).Jarvis();
+                                else if (ignoreA is Line && ignoreB is Polyline)
+                                    additionalPolyline = (ignoreA as Line).Join(ignoreB as Polyline).Jarvis();
+                                else
+                                    additionalPolyline = (ignoreA as Line).Join(ignoreB as Line).Jarvis();
+                                currentIgnores = currentIgnores.Append(additionalPolyline).ToArray();
+                                distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA, distanceB)).ToArray();
+                            }
+                        }
+                    }
+
+                    var newLine = ConnectPoints(pair.Value.First, pair.Value.Second, currentIgnores, distanceToIgnores);
+                    while (newLine.Simplify(ignores, distanceToIgnores) != 0)
+                    {
+                    }
+
+                    newLine.Layer = NetworkManager.GetNetworkName(network);
+                    tr.Draw(newLine);
+                    ignores = ignores.Append(newLine).ToArray();
+                }
 
                 tr.Commit();
             }
@@ -302,10 +390,28 @@ namespace Networks
             }
 
             polyline.AddVertexAt(0, pointTo.Convert2d(new Plane()), 0, 0, 0);
-
             polyline.Simplify();
 
             return polyline;
+        }
+        public static Pair<Point3d, Point3d> GetStartEndPoints()
+        {
+            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
+            Editor ed = acDoc.Editor;
+
+            PromptPointOptions optPoint = new PromptPointOptions($"Выберите первую точку\n");
+            PromptPointResult pointSelRes = ed.GetPoint(optPoint);
+            if (pointSelRes.Status != PromptStatus.OK)
+                throw new Exception("Точка не выбрана");
+            Point3d point1 = pointSelRes.Value;
+
+            optPoint = new PromptPointOptions($"Выберите вторую точку\n");
+            pointSelRes = ed.GetPoint(optPoint);
+            if (pointSelRes.Status != PromptStatus.OK)
+                throw new Exception("Точка не выбрана");
+            Point3d point2 = pointSelRes.Value;
+            
+            return new Pair<Point3d, Point3d>(point1, point2);
         }
     }
 }
