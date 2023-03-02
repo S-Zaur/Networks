@@ -24,8 +24,11 @@ namespace Networks
         HvlSupportsFoundationOver,
         RedLine
     }
-    internal struct Pair<TFirst, TSecond> {
-        public Pair(TFirst first, TSecond second) {
+
+    internal struct Pair<TFirst, TSecond>
+    {
+        public Pair(TFirst first, TSecond second)
+        {
             First = first;
             Second = second;
         }
@@ -135,6 +138,8 @@ namespace Networks
         /// Словарь сетей по названию слоя
         /// </summary>
         private static readonly Dictionary<string, Networks> NetworksMap = new Dictionary<string, Networks>();
+
+        private static readonly Dictionary<string, Buildings> BuildingsMap = new Dictionary<string, Buildings>();
 
         /// <summary>
         /// Получение допустимого расстояния между двумя типами коммуникаций
@@ -332,7 +337,14 @@ namespace Networks
         {
             if (NetworksMap.ContainsKey(typeName))
                 return NetworksMap[typeName];
-            throw new Exception();
+            throw new Exception("Ошибка слоя");
+        }
+
+        public static Buildings GetBuildingType(string typeName)
+        {
+            if (BuildingsMap.ContainsKey(typeName))
+                return BuildingsMap[typeName];
+            throw new Exception("Ошибка слоя");
         }
 
         /// <summary>
@@ -355,6 +367,18 @@ namespace Networks
             NetworksMap[Properties.Settings.Default.CommunicationCableLayerName] = Networks.CommunicationCable;
             NetworksMap[Properties.Settings.Default.PowerCableLayerName] = Networks.PowerCable;
             NetworksMap[Properties.Settings.Default.GasPipeLayerName] = Networks.GasPipe;
+
+            BuildingsMap.Clear();
+            BuildingsMap[Properties.Settings.Default.BuildingsFoundationLayerName] = Buildings.BuildingsFoundation;
+            BuildingsMap[Properties.Settings.Default.StreetSideStoneLayerName] = Buildings.StreetSideStone;
+            BuildingsMap[Properties.Settings.Default.ExternalEdgeLayerName] = Buildings.ExternalEdge;
+            BuildingsMap[Properties.Settings.Default.HvlSupportsFoundation1LayerName] =
+                Buildings.HvlSupportsFoundation1;
+            BuildingsMap[Properties.Settings.Default.HvlSupportsFoundation35LayerName] =
+                Buildings.HvlSupportsFoundation35;
+            BuildingsMap[Properties.Settings.Default.HvlSupportsFoundationOverLayerName] =
+                Buildings.HvlSupportsFoundationOver;
+            BuildingsMap[Properties.Settings.Default.RedLineLayerName] = Buildings.RedLine;
         }
     }
 }

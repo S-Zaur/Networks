@@ -121,6 +121,7 @@ namespace Networks
                 tr.Commit();
             }
         }
+
         public static void DrawNetworksByPoints(Networks network, double size)
         {
             #region Init
@@ -140,7 +141,7 @@ namespace Networks
             if (pointSelRes.Status != PromptStatus.OK)
                 return;
             Point3d point2 = pointSelRes.Value;
-            
+
             var filterList = new[]
             {
                 new TypedValue(-4, "<OR"),
@@ -179,7 +180,7 @@ namespace Networks
 
                 for (int j = 0; j < ignoresCount; j++)
                 {
-                    for (int k = j+1; k < ignoresCount; k++)
+                    for (int k = j + 1; k < ignoresCount; k++)
                     {
                         var ignoreA = ignores[j];
                         var ignoreB = ignores[k];
@@ -198,16 +199,16 @@ namespace Networks
                             else
                                 additionalPolyline = (ignoreA as Line).Join(ignoreB as Line).Jarvis();
                             ignores = ignores.Append(additionalPolyline).ToArray();
-                            distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA,distanceB)).ToArray();
+                            distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA, distanceB)).ToArray();
                         }
                     }
                 }
-                
+
                 var newLine = ConnectPoints(point1, point2, ignores, distanceToIgnores);
                 while (newLine.Simplify(ignores, distanceToIgnores) != 0)
                 {
                 }
-                
+
                 newLine.Layer = NetworkManager.GetNetworkName(network);
                 acBlkTblRec.AppendEntity(newLine);
                 tr.AddNewlyCreatedDBObject(newLine, true);
@@ -219,6 +220,7 @@ namespace Networks
         public static void DrawNetworks(Dictionary<Networks, Pair<Point3d, Point3d>> points, double[] sizes)
         {
             #region Init
+
             Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
             Database db = acDoc.Database;
             Editor ed = acDoc.Editor;
@@ -241,12 +243,22 @@ namespace Networks
                 ? Array.Empty<ObjectId>()
                 : selRes.Value.GetObjectIds();
 
+            selectionOptions.MessageForAdding = "Выберите здания и сооружения которые необходимо учесть(необязательно)";
+            selRes = ed.GetSelection(selectionOptions, filter);
+            ObjectId[] objectIdsBuildings = selRes.Status != PromptStatus.OK
+                ? Array.Empty<ObjectId>()
+                : selRes.Value.GetObjectIds();
+
             #endregion
 
             using (DocumentLock _ = acDoc.LockDocument())
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 Curve[] ignores = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve).ToArray();
+                ignores = ignores.Select(x => x is Polyline ? (x as Polyline).Jarvis() : x).ToArray();
+
+                Curve[] buildingIgnores = objectIdsBuildings.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve)
+                    .ToArray();
                 ignores = ignores.Select(x => x is Polyline ? (x as Polyline).Jarvis() : x).ToArray();
 
                 foreach (var pair in points)
@@ -256,6 +268,13 @@ namespace Networks
                     double[] distanceToIgnores = ignores.Select(x => NetworkManager.GetDistance(network,
                         NetworkManager.GetType(x.Layer))).ToArray();
 
+                    double[] distanceToBuildingIgnores = buildingIgnores.Select(x =>
+                        NetworkManager.GetDistanceToBuilding(network,
+                            NetworkManager.GetBuildingType(x.Layer))).ToArray();
+
+                    currentIgnores = currentIgnores.Concat(buildingIgnores).ToArray();
+                    distanceToIgnores = distanceToIgnores.Concat(distanceToBuildingIgnores).ToArray();
+                    
                     if (network == Networks.WaterPipe && sizes[0] != 0)
                         distanceToIgnores = distanceToIgnores.Select(x => x + sizes[0] / 2).ToArray();
                     if (network == Networks.Sewer && sizes[1] != 0)
@@ -292,7 +311,7 @@ namespace Networks
                     }
 
                     var newLine = ConnectPoints(pair.Value.First, pair.Value.Second, currentIgnores, distanceToIgnores);
-                    while (newLine.Simplify(ignores, distanceToIgnores) != 0)
+                    while (newLine.Simplify(ignores.Union(buildingIgnores).ToArray(), distanceToIgnores) != 0)
                     {
                     }
 
@@ -304,6 +323,7 @@ namespace Networks
                 tr.Commit();
             }
         }
+
         public static Polyline ConnectPoints(Point3d pointFrom, Point3d pointTo, Curve[] curves, double[] distances)
         {
             Polyline polyline = new Polyline();
@@ -314,7 +334,7 @@ namespace Networks
 
             Vector3d vectorMem = new Vector3d();
             int signMem = 0;
-            while (pointFrom.DistanceTo(pointTo) > 1 && stoper < 1000)
+            while (pointFrom.DistanceTo(pointTo) > 1 && stoper < 100000)
             {
                 Vector3d vector3d = pointTo - pointFrom;
                 vector3d /= vector3d.Length;
@@ -394,6 +414,7 @@ namespace Networks
 
             return polyline;
         }
+
         public static Pair<Point3d, Point3d> GetStartEndPoints()
         {
             Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
@@ -410,7 +431,7 @@ namespace Networks
             if (pointSelRes.Status != PromptStatus.OK)
                 throw new Exception("Точка не выбрана");
             Point3d point2 = pointSelRes.Value;
-            
+
             return new Pair<Point3d, Point3d>(point1, point2);
         }
     }
