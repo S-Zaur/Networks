@@ -60,31 +60,6 @@ namespace Networks
             GasPipeCheckBox.Tag = Networks.GasPipe;
         }
 
-        private void DrawByLineButton_Click(object sender, EventArgs e)
-        {
-            NetworkManager.SetPipeType(
-                WaterPipeTypeComboBox.SelectedItem.ToString(),
-                double.Parse(WaterPipesSizeTextBox.Text == "" ? "0" : WaterPipesSizeTextBox.Text)
-            );
-            NetworkManager.SetGasPipePressure(
-                double.Parse(GasPipePressureTextBox.Text==""?"0":GasPipePressureTextBox.Text)
-                );
-
-            WindowState = FormWindowState.Minimized;
-
-            AutocadHelperOld.DrawNetworksByLine(
-                CreateNetworkArray(),
-                new[]
-                {
-                    double.Parse(WaterPipesSizeTextBox.Text == "" ? "0" : WaterPipesSizeTextBox.Text) / 1000,
-                    double.Parse(SewersSizeTextBox.Text == "" ? "0" : SewersSizeTextBox.Text) / 1000,
-                    double.Parse(HeatingNetworksSizeTextBox.Text == "" ? "0" : HeatingNetworksSizeTextBox.Text) / 1000
-                }
-            );
-
-            WindowState = FormWindowState.Normal;
-        }
-
         private Networks[] CreateNetworkArray()
         {
             List<Networks> lst = new List<Networks>();
@@ -118,31 +93,6 @@ namespace Networks
             Autodesk.AutoCAD.ApplicationServices.Application.ShowModalDialog(form);
             NetworkManager.SetLayers();
             AutocadHelper.CheckLayers();
-        }
-
-        private void DrawByAreaButton_Click(object sender, EventArgs e)
-        {
-            NetworkManager.SetPipeType(
-                WaterPipeTypeComboBox.SelectedItem.ToString(),
-                double.Parse(WaterPipesSizeTextBox.Text == "" ? "0" : WaterPipesSizeTextBox.Text)
-            );
-            NetworkManager.SetGasPipePressure(
-                double.Parse(GasPipePressureTextBox.Text==""?"0":GasPipePressureTextBox.Text)
-            );
-
-            WindowState = FormWindowState.Minimized;
-
-            AutocadHelperOld.DrawNetworksByArea(
-                CreateNetworkArray(),
-                new[]
-                {
-                    double.Parse(WaterPipesSizeTextBox.Text == "" ? "0" : WaterPipesSizeTextBox.Text) / 1000,
-                    double.Parse(SewersSizeTextBox.Text == "" ? "0" : SewersSizeTextBox.Text) / 1000,
-                    double.Parse(HeatingNetworksSizeTextBox.Text == "" ? "0" : HeatingNetworksSizeTextBox.Text) / 1000
-                }
-            );
-
-            WindowState = FormWindowState.Normal;
         }
 
         private void AllowIntersectionCheckBox_CheckedChanged(object sender, EventArgs e)

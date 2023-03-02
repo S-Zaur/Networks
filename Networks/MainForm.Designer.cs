@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.DrawByLineButton = new System.Windows.Forms.Button();
             this.WaterPipesCheckBox = new System.Windows.Forms.CheckBox();
             this.SewersCheckBox = new System.Windows.Forms.CheckBox();
             this.HeatingNetworksCheckBox = new System.Windows.Forms.CheckBox();
@@ -43,7 +42,6 @@
             this.CommunictionLabel = new System.Windows.Forms.Label();
             this.SizeLabel = new System.Windows.Forms.Label();
             this.TypeLabel = new System.Windows.Forms.Label();
-            this.DrawByAreaButton = new System.Windows.Forms.Button();
             this.AllowIntersectionCheckBox = new System.Windows.Forms.CheckBox();
             this.GasPipeCheckBox = new System.Windows.Forms.CheckBox();
             this.GasPipePressureTextBox = new System.Windows.Forms.TextBox();
@@ -51,16 +49,6 @@
             this.DrawButton = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // DrawByLineButton
-            // 
-            this.DrawByLineButton.Location = new System.Drawing.Point(31, 246);
-            this.DrawByLineButton.Name = "DrawByLineButton";
-            this.DrawByLineButton.Size = new System.Drawing.Size(102, 28);
-            this.DrawByLineButton.TabIndex = 0;
-            this.DrawByLineButton.Text = "Вдоль линии";
-            this.DrawByLineButton.UseVisualStyleBackColor = true;
-            this.DrawByLineButton.Click += new System.EventHandler(this.DrawByLineButton_Click);
             // 
             // WaterPipesCheckBox
             // 
@@ -195,16 +183,6 @@
             this.TypeLabel.TabIndex = 13;
             this.TypeLabel.Text = "Тип";
             // 
-            // DrawByAreaButton
-            // 
-            this.DrawByAreaButton.Location = new System.Drawing.Point(139, 246);
-            this.DrawByAreaButton.Name = "DrawByAreaButton";
-            this.DrawByAreaButton.Size = new System.Drawing.Size(102, 28);
-            this.DrawByAreaButton.TabIndex = 14;
-            this.DrawByAreaButton.Text = "В области";
-            this.DrawByAreaButton.UseVisualStyleBackColor = true;
-            this.DrawByAreaButton.Click += new System.EventHandler(this.DrawByAreaButton_Click);
-            // 
             // AllowIntersectionCheckBox
             // 
             this.AllowIntersectionCheckBox.Enabled = false;
@@ -245,7 +223,7 @@
             // 
             // DrawButton
             // 
-            this.DrawButton.Location = new System.Drawing.Point(247, 246);
+            this.DrawButton.Location = new System.Drawing.Point(139, 246);
             this.DrawButton.Name = "DrawButton";
             this.DrawButton.Size = new System.Drawing.Size(102, 28);
             this.DrawButton.TabIndex = 21;
@@ -263,7 +241,6 @@
             this.Controls.Add(this.GasPipePressureTextBox);
             this.Controls.Add(this.GasPipeCheckBox);
             this.Controls.Add(this.AllowIntersectionCheckBox);
-            this.Controls.Add(this.DrawByAreaButton);
             this.Controls.Add(this.TypeLabel);
             this.Controls.Add(this.SizeLabel);
             this.Controls.Add(this.CommunictionLabel);
@@ -276,7 +253,6 @@
             this.Controls.Add(this.HeatingNetworksCheckBox);
             this.Controls.Add(this.SewersCheckBox);
             this.Controls.Add(this.WaterPipesCheckBox);
-            this.Controls.Add(this.DrawByLineButton);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
             this.MaximumSize = new System.Drawing.Size(415, 370);
@@ -300,8 +276,6 @@
 
         private System.Windows.Forms.CheckBox AllowIntersectionCheckBox;
 
-        private System.Windows.Forms.Button DrawByAreaButton;
-
         private System.Windows.Forms.Label CommunictionLabel;
         private System.Windows.Forms.Label SizeLabel;
         private System.Windows.Forms.Label TypeLabel;
@@ -312,7 +286,6 @@
 
         #endregion
 
-        private System.Windows.Forms.Button DrawByLineButton;
         private System.Windows.Forms.CheckBox WaterPipesCheckBox;
         private System.Windows.Forms.CheckBox SewersCheckBox;
         private System.Windows.Forms.CheckBox HeatingNetworksCheckBox;

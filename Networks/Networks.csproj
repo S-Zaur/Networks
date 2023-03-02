@@ -73,7 +73,6 @@
   <ItemGroup>
     <Compile Include="AutocadExtensions.cs" />
     <Compile Include="AutocadHelper.cs" />
-    <Compile Include="AutocadHelperOld.cs" />
     <Compile Include="ConfiguratorForm.cs">
       <SubType>Form</SubType>
     </Compile>
