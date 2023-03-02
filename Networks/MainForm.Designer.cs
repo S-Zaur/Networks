@@ -44,7 +44,6 @@
             this.SizeLabel = new System.Windows.Forms.Label();
             this.TypeLabel = new System.Windows.Forms.Label();
             this.DrawByAreaButton = new System.Windows.Forms.Button();
-            this.DrawByPointsButton = new System.Windows.Forms.Button();
             this.AllowIntersectionCheckBox = new System.Windows.Forms.CheckBox();
             this.GasPipeCheckBox = new System.Windows.Forms.CheckBox();
             this.GasPipePressureTextBox = new System.Windows.Forms.TextBox();
@@ -206,16 +205,6 @@
             this.DrawByAreaButton.UseVisualStyleBackColor = true;
             this.DrawByAreaButton.Click += new System.EventHandler(this.DrawByAreaButton_Click);
             // 
-            // DrawByPointsButton
-            // 
-            this.DrawByPointsButton.Location = new System.Drawing.Point(247, 246);
-            this.DrawByPointsButton.Name = "DrawByPointsButton";
-            this.DrawByPointsButton.Size = new System.Drawing.Size(102, 28);
-            this.DrawByPointsButton.TabIndex = 15;
-            this.DrawByPointsButton.Text = "По точкам";
-            this.DrawByPointsButton.UseVisualStyleBackColor = true;
-            this.DrawByPointsButton.Click += new System.EventHandler(this.DrawByPointsButton_Click);
-            // 
             // AllowIntersectionCheckBox
             // 
             this.AllowIntersectionCheckBox.Enabled = false;
@@ -256,9 +245,9 @@
             // 
             // DrawButton
             // 
-            this.DrawButton.Location = new System.Drawing.Point(247, 280);
+            this.DrawButton.Location = new System.Drawing.Point(247, 246);
             this.DrawButton.Name = "DrawButton";
-            this.DrawButton.Size = new System.Drawing.Size(102, 23);
+            this.DrawButton.Size = new System.Drawing.Size(102, 28);
             this.DrawButton.TabIndex = 21;
             this.DrawButton.Text = "Нарисовать";
             this.DrawButton.UseVisualStyleBackColor = true;
@@ -274,7 +263,6 @@
             this.Controls.Add(this.GasPipePressureTextBox);
             this.Controls.Add(this.GasPipeCheckBox);
             this.Controls.Add(this.AllowIntersectionCheckBox);
-            this.Controls.Add(this.DrawByPointsButton);
             this.Controls.Add(this.DrawByAreaButton);
             this.Controls.Add(this.TypeLabel);
             this.Controls.Add(this.SizeLabel);
@@ -311,8 +299,6 @@
         private System.Windows.Forms.CheckBox GasPipeCheckBox;
 
         private System.Windows.Forms.CheckBox AllowIntersectionCheckBox;
-
-        private System.Windows.Forms.Button DrawByPointsButton;
 
         private System.Windows.Forms.Button DrawByAreaButton;
 
