@@ -179,7 +179,7 @@ namespace Networks
 
                     currentIgnores = currentIgnores.Concat(buildingIgnores).ToArray();
                     distanceToIgnores = distanceToIgnores.Concat(distanceToBuildingIgnores).ToArray();
-                    
+
                     if (network == Networks.WaterPipe && sizes[0] != 0)
                         distanceToIgnores = distanceToIgnores.Select(x => x + sizes[0] / 2).ToArray();
                     if (network == Networks.Sewer && sizes[1] != 0)
@@ -215,7 +215,12 @@ namespace Networks
                         }
                     }
 
-                    var newLine = ConnectPoints(pair.Value.First, pair.Value.Second, currentIgnores, distanceToIgnores);
+                    Polyline newLine;
+                    if (Properties.Settings.Default.AllowIntersection)
+                        newLine = ConnectPointsWithIntersect(pair.Value.First, pair.Value.Second, currentIgnores, distanceToIgnores);
+                    else
+                        newLine = ConnectPoints(pair.Value.First, pair.Value.Second, currentIgnores,
+                            distanceToIgnores);
                     while (newLine.Simplify(ignores.Union(buildingIgnores).ToArray(), distanceToIgnores) != 0)
                     {
                     }
@@ -229,7 +234,7 @@ namespace Networks
             }
         }
 
-        public static Polyline ConnectPoints(Point3d pointFrom, Point3d pointTo, Curve[] curves, double[] distances)
+        private static Polyline ConnectPoints(Point3d pointFrom, Point3d pointTo, Curve[] curves, double[] distances)
         {
             Polyline polyline = new Polyline();
             polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
@@ -318,6 +323,12 @@ namespace Networks
             polyline.Simplify();
 
             return polyline;
+        }
+
+        private static Polyline ConnectPointsWithIntersect(Point3d pointFrom, Point3d pointTo, Curve[] curves,
+            double[] distances)
+        {
+            throw new NotImplementedException();
         }
 
         public static Pair<Point3d, Point3d> GetStartEndPoints()

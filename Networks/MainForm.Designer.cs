@@ -38,11 +38,12 @@
             this.HeatingNetworksSizeTextBox = new System.Windows.Forms.TextBox();
             this.WaterPipeTypeComboBox = new System.Windows.Forms.ComboBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.ConfigureStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ConfigureLayersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.StrictModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CommunictionLabel = new System.Windows.Forms.Label();
             this.SizeLabel = new System.Windows.Forms.Label();
             this.TypeLabel = new System.Windows.Forms.Label();
-            this.AllowIntersectionCheckBox = new System.Windows.Forms.CheckBox();
             this.GasPipeCheckBox = new System.Windows.Forms.CheckBox();
             this.GasPipePressureTextBox = new System.Windows.Forms.TextBox();
             this.PressureLabel = new System.Windows.Forms.Label();
@@ -145,19 +146,34 @@
             // 
             // menuStrip1
             // 
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { this.ConfigureLayersToolStripMenuItem });
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { this.ConfigureStripMenuItem });
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(397, 28);
             this.menuStrip1.TabIndex = 10;
             this.menuStrip1.Text = "menuStrip1";
             // 
+            // ConfigureStripMenuItem
+            // 
+            this.ConfigureStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { this.ConfigureLayersToolStripMenuItem, this.StrictModeToolStripMenuItem });
+            this.ConfigureStripMenuItem.Name = "ConfigureStripMenuItem";
+            this.ConfigureStripMenuItem.Size = new System.Drawing.Size(96, 24);
+            this.ConfigureStripMenuItem.Text = "Настройки";
+            // 
             // ConfigureLayersToolStripMenuItem
             // 
             this.ConfigureLayersToolStripMenuItem.Name = "ConfigureLayersToolStripMenuItem";
-            this.ConfigureLayersToolStripMenuItem.Size = new System.Drawing.Size(131, 24);
+            this.ConfigureLayersToolStripMenuItem.Size = new System.Drawing.Size(188, 24);
             this.ConfigureLayersToolStripMenuItem.Text = "Настроить слои";
             this.ConfigureLayersToolStripMenuItem.Click += new System.EventHandler(this.ConfigureLayersToolStripMenuItem_Click);
+            // 
+            // StrictModeToolStripMenuItem
+            // 
+            this.StrictModeToolStripMenuItem.CheckOnClick = true;
+            this.StrictModeToolStripMenuItem.Name = "StrictModeToolStripMenuItem";
+            this.StrictModeToolStripMenuItem.Size = new System.Drawing.Size(188, 24);
+            this.StrictModeToolStripMenuItem.Text = "Строгий режим";
+            this.StrictModeToolStripMenuItem.Click += new System.EventHandler(this.StrictModeToolStripMenuItem_Click);
             // 
             // CommunictionLabel
             // 
@@ -182,17 +198,6 @@
             this.TypeLabel.Size = new System.Drawing.Size(100, 23);
             this.TypeLabel.TabIndex = 13;
             this.TypeLabel.Text = "Тип";
-            // 
-            // AllowIntersectionCheckBox
-            // 
-            this.AllowIntersectionCheckBox.Enabled = false;
-            this.AllowIntersectionCheckBox.Location = new System.Drawing.Point(17, 280);
-            this.AllowIntersectionCheckBox.Name = "AllowIntersectionCheckBox";
-            this.AllowIntersectionCheckBox.Size = new System.Drawing.Size(224, 24);
-            this.AllowIntersectionCheckBox.TabIndex = 17;
-            this.AllowIntersectionCheckBox.Text = "Разрешить пересечения";
-            this.AllowIntersectionCheckBox.UseVisualStyleBackColor = true;
-            this.AllowIntersectionCheckBox.CheckedChanged += new System.EventHandler(this.AllowIntersectionCheckBox_CheckedChanged);
             // 
             // GasPipeCheckBox
             // 
@@ -223,7 +228,7 @@
             // 
             // DrawButton
             // 
-            this.DrawButton.Location = new System.Drawing.Point(139, 246);
+            this.DrawButton.Location = new System.Drawing.Point(142, 227);
             this.DrawButton.Name = "DrawButton";
             this.DrawButton.Size = new System.Drawing.Size(102, 28);
             this.DrawButton.TabIndex = 21;
@@ -235,12 +240,11 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(397, 323);
+            this.ClientSize = new System.Drawing.Size(397, 263);
             this.Controls.Add(this.DrawButton);
             this.Controls.Add(this.PressureLabel);
             this.Controls.Add(this.GasPipePressureTextBox);
             this.Controls.Add(this.GasPipeCheckBox);
-            this.Controls.Add(this.AllowIntersectionCheckBox);
             this.Controls.Add(this.TypeLabel);
             this.Controls.Add(this.SizeLabel);
             this.Controls.Add(this.CommunictionLabel);
@@ -255,9 +259,9 @@
             this.Controls.Add(this.WaterPipesCheckBox);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
-            this.MaximumSize = new System.Drawing.Size(415, 370);
+            this.MaximumSize = new System.Drawing.Size(415, 310);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(415, 370);
+            this.MinimumSize = new System.Drawing.Size(415, 310);
             this.Name = "MainForm";
             this.Text = "Коридоры для сетей";
             this.menuStrip1.ResumeLayout(false);
@@ -265,6 +269,10 @@
             this.ResumeLayout(false);
             this.PerformLayout();
         }
+
+        private System.Windows.Forms.ToolStripMenuItem StrictModeToolStripMenuItem;
+
+        private System.Windows.Forms.ToolStripMenuItem ConfigureLayersToolStripMenuItem;
 
         private System.Windows.Forms.Button DrawButton;
 
@@ -274,13 +282,11 @@
 
         private System.Windows.Forms.CheckBox GasPipeCheckBox;
 
-        private System.Windows.Forms.CheckBox AllowIntersectionCheckBox;
-
         private System.Windows.Forms.Label CommunictionLabel;
         private System.Windows.Forms.Label SizeLabel;
         private System.Windows.Forms.Label TypeLabel;
 
-        private System.Windows.Forms.ToolStripMenuItem ConfigureLayersToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ConfigureStripMenuItem;
 
         private System.Windows.Forms.MenuStrip menuStrip1;
 

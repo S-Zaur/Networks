@@ -95,12 +95,6 @@ namespace Networks
             AutocadHelper.CheckLayers();
         }
 
-        private void AllowIntersectionCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            Properties.Settings.Default.AllowIntersection = AllowIntersectionCheckBox.Checked;
-            Properties.Settings.Default.Save();
-        }
-
         private void CheckBox_CheckedChanged(object sender, EventArgs e)
         {
             var checkBox = sender as CheckBox;
@@ -148,6 +142,12 @@ namespace Networks
             );
 
             WindowState = FormWindowState.Normal;
+        }
+
+        private void StrictModeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.AllowIntersection = StrictModeToolStripMenuItem.Checked;
+            Properties.Settings.Default.Save();
         }
     }
 }
