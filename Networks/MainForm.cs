@@ -16,7 +16,8 @@ namespace Networks
     {
         private static readonly DateTime StopDate = new DateTime(2023, 3, 7);
 
-        private readonly Dictionary<Networks, Pair<Point3d, Point3d>> _points = new Dictionary<Networks, Pair<Point3d, Point3d>>();
+        private readonly Dictionary<Networks, Pair<Point3d, Point3d>> _points =
+            new Dictionary<Networks, Pair<Point3d, Point3d>>();
 
         private static DateTime GetCurrentDate()
         {
@@ -105,6 +106,7 @@ namespace Networks
                 _points.Remove((Networks)checkBox.Tag);
                 return;
             }
+
             try
             {
                 WindowState = FormWindowState.Minimized;
@@ -126,7 +128,7 @@ namespace Networks
                 double.Parse(WaterPipesSizeTextBox.Text == "" ? "0" : WaterPipesSizeTextBox.Text)
             );
             NetworkManager.SetGasPipePressure(
-                double.Parse(GasPipePressureTextBox.Text==""?"0":GasPipePressureTextBox.Text)
+                double.Parse(GasPipePressureTextBox.Text == "" ? "0" : GasPipePressureTextBox.Text)
             );
 
             WindowState = FormWindowState.Minimized;
@@ -148,6 +150,25 @@ namespace Networks
         {
             Properties.Settings.Default.AllowIntersection = StrictModeToolStripMenuItem.Checked;
             Properties.Settings.Default.Save();
+        }
+
+        private void toolStripTextBox1_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            char number = e.KeyChar;
+            if (!char.IsDigit(number) && number != 8)
+            {
+                e.Handled = true;
+            }
+
+            if (int.TryParse(MinAngleToolStripTextBox.Text + number, out int angle) && number != 8 && angle > 90)
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void MinAngleToolStripTextBox_TextChanged(object sender, EventArgs e)
+        {
+            AutocadHelper.MinAngle = int.Parse(MinAngleToolStripTextBox.Text);
         }
     }
 }

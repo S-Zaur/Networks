@@ -487,5 +487,11 @@ namespace Networks
             
             return result;
         }
+        public static int IntersectionsCount(this Entity first, Entity second)
+        {
+            Point3dCollection pts = new Point3dCollection();
+            first.IntersectWith(second, Intersect.OnBothOperands, pts, IntPtr.Zero, IntPtr.Zero);
+            return pts.Count;
+        }
     }
 }

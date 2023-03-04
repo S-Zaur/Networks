@@ -41,6 +41,7 @@
             this.ConfigureStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ConfigureLayersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.StrictModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.MinAngleToolStripTextBox = new System.Windows.Forms.ToolStripTextBox();
             this.CommunictionLabel = new System.Windows.Forms.Label();
             this.SizeLabel = new System.Windows.Forms.Label();
             this.TypeLabel = new System.Windows.Forms.Label();
@@ -155,7 +156,7 @@
             // 
             // ConfigureStripMenuItem
             // 
-            this.ConfigureStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { this.ConfigureLayersToolStripMenuItem, this.StrictModeToolStripMenuItem });
+            this.ConfigureStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { this.ConfigureLayersToolStripMenuItem, this.StrictModeToolStripMenuItem, this.MinAngleToolStripTextBox });
             this.ConfigureStripMenuItem.Name = "ConfigureStripMenuItem";
             this.ConfigureStripMenuItem.Size = new System.Drawing.Size(96, 24);
             this.ConfigureStripMenuItem.Text = "Настройки";
@@ -174,6 +175,15 @@
             this.StrictModeToolStripMenuItem.Size = new System.Drawing.Size(188, 24);
             this.StrictModeToolStripMenuItem.Text = "Строгий режим";
             this.StrictModeToolStripMenuItem.Click += new System.EventHandler(this.StrictModeToolStripMenuItem_Click);
+            // 
+            // MinAngleToolStripTextBox
+            // 
+            this.MinAngleToolStripTextBox.Name = "MinAngleToolStripTextBox";
+            this.MinAngleToolStripTextBox.Size = new System.Drawing.Size(100, 27);
+            this.MinAngleToolStripTextBox.Text = "90";
+            this.MinAngleToolStripTextBox.ToolTipText = "Мин. улог пересечения";
+            this.MinAngleToolStripTextBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.toolStripTextBox1_KeyPress);
+            this.MinAngleToolStripTextBox.TextChanged += new System.EventHandler(this.MinAngleToolStripTextBox_TextChanged);
             // 
             // CommunictionLabel
             // 
@@ -269,6 +279,8 @@
             this.ResumeLayout(false);
             this.PerformLayout();
         }
+
+        private System.Windows.Forms.ToolStripTextBox MinAngleToolStripTextBox;
 
         private System.Windows.Forms.ToolStripMenuItem StrictModeToolStripMenuItem;
 

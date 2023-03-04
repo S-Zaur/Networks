@@ -93,7 +93,14 @@ namespace Networks
         [CommandMethod("CONNECT")]
         public void ConnectCurves()
         {
-            AutocadHelper.ConnectCurves();
+            ACADHelperTemp.ConnectCurves();
+        }
+        
+        [Conditional("DEBUG")]
+        [CommandMethod("TempFunc")]
+        public void TempFunc()
+        {
+            ACADHelperTemp.TempFunc();
         }
     }
     
