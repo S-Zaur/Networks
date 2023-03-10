@@ -13,7 +13,8 @@ namespace Networks
     [SuppressMessage("ReSharper", "AccessToStaticMemberViaDerivedType")]
     internal static class AutocadHelper
     {
-        private const double Delta = 0.1;
+        private const double Delta = 0.2;
+        private static int MaxDepth = 30;
         public static int MinAngle { get; set; } = 90;
 
         /// <summary>
@@ -168,15 +169,7 @@ namespace Networks
                             if (distanceA + distanceB <= distanceBetween)
                                 continue;
 
-                            Polyline additionalPolyline;
-                            if (ignoreA is Polyline && ignoreB is Polyline)
-                                additionalPolyline = (ignoreA as Polyline).Join(ignoreB as Polyline).Jarvis();
-                            else if (ignoreA is Polyline && ignoreB is Line)
-                                additionalPolyline = (ignoreA as Polyline).Join(ignoreB as Line).Jarvis();
-                            else if (ignoreA is Line && ignoreB is Polyline)
-                                additionalPolyline = (ignoreA as Line).Join(ignoreB as Polyline).Jarvis();
-                            else
-                                additionalPolyline = (ignoreA as Line).Join(ignoreB as Line).Jarvis();
+                            Polyline additionalPolyline = ignoreA.Join(ignoreB);
                             currentIgnores = currentIgnores.Append(additionalPolyline).ToArray();
                             distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA, distanceB)).ToArray();
                         }
@@ -208,15 +201,13 @@ namespace Networks
             polyline.AddVertexAt(0, pointFrom.Convert2d(new Plane()), 0, 0, 0);
 
             int stopper = 0;
-            const double delta = 0.1;
 
             Vector3d vectorMem = new Vector3d();
             int signMem = 0;
             while (pointFrom.DistanceTo(pointTo) > 1 && stopper < 1000)
             {
                 Vector3d vector3d = pointTo - pointFrom;
-                vector3d /= vector3d.Length;
-                vector3d *= delta;
+                vector3d *= Delta / vector3d.Length;
                 pointFrom += vector3d;
 
                 for (int i = 0; i < curves.Length; i++)
@@ -228,9 +219,7 @@ namespace Networks
 
                     pointFrom -= vector3d;
                     vector3d = curve.GetFirstDerivative(curve.GetClosestPointTo(pointFrom, false));
-                    vector3d /= vector3d.Length;
-                    vector3d *= delta;
-
+                    vector3d *= Delta / vector3d.Length;
 
                     if (vectorMem == vector3d)
                     {
@@ -240,8 +229,7 @@ namespace Networks
                             var vector = pointFrom - curve.GetClosestPointTo(pointFrom, false);
                             var old = vector;
                             var len = vector.Length;
-                            vector *= distance;
-                            vector /= len;
+                            vector *= distance / len;
                             vector = vector.Subtract(old);
                             pointFrom += vector;
                         }
@@ -269,8 +257,7 @@ namespace Networks
                         var vector = pointFrom - curve.GetClosestPointTo(pointFrom, false);
                         var old = vector;
                         var len = vector.Length;
-                        vector *= distance;
-                        vector /= len;
+                        vector *= distance / len;
                         vector = vector.Subtract(old);
                         pointFrom += vector;
                     }
@@ -400,9 +387,9 @@ namespace Networks
                 ++stopper;
             }
 
-            if (stopper >= maxCounts-1)
+            if (stopper >= maxCounts - 1)
                 Autocad.DocumentManager.MdiActiveDocument.Editor.WriteMessage("ERROR\n");
-            
+
             polyline.AddVertexAt(0, pointTo.Convert2d(new Plane()), 0, 0, 0);
             polyline.Simplify();
 

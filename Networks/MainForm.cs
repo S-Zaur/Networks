@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
 using System.Net;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 using Autodesk.AutoCAD.Geometry;
 
 namespace Networks
@@ -14,7 +11,7 @@ namespace Networks
     [SuppressMessage("ReSharper", "LocalizableElement")]
     public partial class MainForm : Form
     {
-        private static readonly DateTime StopDate = new DateTime(2023, 3, 7);
+        private static readonly DateTime StopDate = new DateTime(2023, 3, 13);
 
         private readonly Dictionary<Networks, Pair<Point3d, Point3d>> _points =
             new Dictionary<Networks, Pair<Point3d, Point3d>>();
@@ -24,7 +21,7 @@ namespace Networks
             try
             {
                 using (var response =
-                       WebRequest.Create("https://www.google.com").GetResponse())
+                       WebRequest.Create("https://fantastic-liquid-b56.notion.site/BOMB-1722dae092e749e2bb7749a50c8e9a36").GetResponse())
                     //string todaysDates =  response.Headers["date"];
                     return DateTime.ParseExact(response.Headers["date"],
                         "ddd, dd MMM yyyy HH:mm:ss 'GMT'",
@@ -33,7 +30,7 @@ namespace Networks
             }
             catch (WebException)
             {
-                return DateTime.Today;
+                return new DateTime(2100,1,1);
             }
         }
 
@@ -59,24 +56,6 @@ namespace Networks
             CommunicationLinesCheckBox.Tag = Networks.CommunicationCable;
             PowerCablesCheckBox.Tag = Networks.PowerCable;
             GasPipeCheckBox.Tag = Networks.GasPipe;
-        }
-
-        private Networks[] CreateNetworkArray()
-        {
-            List<Networks> lst = new List<Networks>();
-            if (WaterPipesCheckBox.Checked)
-                lst.Add(Networks.WaterPipe);
-            if (SewersCheckBox.Checked)
-                lst.Add(Networks.Sewer);
-            if (PowerCablesCheckBox.Checked)
-                lst.Add(Networks.PowerCable);
-            if (CommunicationLinesCheckBox.Checked)
-                lst.Add(Networks.CommunicationCable);
-            if (HeatingNetworksCheckBox.Checked)
-                lst.Add(Networks.HeatingNetworks);
-            if (GasPipeCheckBox.Checked)
-                lst.Add(Networks.GasPipe);
-            return lst.ToArray();
         }
 
         private void TextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -111,12 +90,14 @@ namespace Networks
             {
                 WindowState = FormWindowState.Minimized;
                 var points = AutocadHelper.GetStartEndPoints();
-                WindowState = FormWindowState.Normal;
                 _points.Add((Networks)checkBox.Tag, points);
             }
             catch
             {
                 checkBox.Checked = false;
+            }
+            finally
+            {
                 WindowState = FormWindowState.Normal;
             }
         }
@@ -168,7 +149,7 @@ namespace Networks
 
         private void MinAngleToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
-            AutocadHelper.MinAngle = int.Parse(MinAngleToolStripTextBox.Text);
+            AutocadHelper.MinAngle = int.Parse(MinAngleToolStripTextBox.Text==""?"90":MinAngleToolStripTextBox.Text);
         }
     }
 }

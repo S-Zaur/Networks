@@ -21,6 +21,7 @@ namespace Networks
                 secondCurve.GetClosestPointTo(pointOnFirstCurveClosestToSecondCurve, false);
             return pointOnFirstCurveClosestToSecondCurve.DistanceTo(pointOnSecondCurveClosestToFirstCurve);
         }
+
         /// <summary>
         /// Добавление объекта на чертеж
         /// </summary>
@@ -28,6 +29,7 @@ namespace Networks
         /// <param name="entity">Объект который небходимо добавить на чертеж</param>
         public static void Draw(this Transaction transaction, Entity entity)
         {
+            if (entity is null) return;
             BlockTable acBlkTbl =
                 transaction.GetObject(Autocad.DocumentManager.MdiActiveDocument.Database.BlockTableId,
                     OpenMode.ForRead) as BlockTable;
@@ -36,9 +38,16 @@ namespace Networks
                 transaction.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
             if (acBlkTblRec is null) return;
 
-            acBlkTblRec.AppendEntity(entity);
-            transaction.AddNewlyCreatedDBObject(entity, true);
+            try
+            {
+                acBlkTblRec.AppendEntity(entity);
+                transaction.AddNewlyCreatedDBObject(entity, true);
+            }
+            catch
+            {
+            }
         }
+
         public static void Simplify(this Polyline polyline)
         {
             if (polyline.NumberOfVertices <= 2)
@@ -59,34 +68,44 @@ namespace Networks
                 i++;
             }
         }
+
         public static int Simplify(this Polyline polyline, Curve[] curves, double[] distances)
         {
             if (polyline.NumberOfVertices <= 2)
                 return 0;
             var oldNumberOfVertices = polyline.NumberOfVertices;
-            for (int i = 1; i < polyline.NumberOfVertices - 1;)
+            for (int i = 1; i < polyline.NumberOfVertices - 2;)
             {
                 var point = polyline.GetPoint2dAt(i);
 
-                polyline.RemoveVertexAt(i);
+                if (polyline.GetPoint3dAt(i - 1) == polyline.GetPoint3dAt(i))
+                {
+                    polyline.RemoveVertexAt(i);
+                    continue;
+                }
 
+                var line = new Line(polyline.GetPoint3dAt(i - 1), polyline.GetPoint3dAt(i + 1));
+                var flag = true;
                 for (int j = 0; j < curves.Length; j++)
                 {
                     var curve = curves[j];
                     var distanceByTable = distances[j];
-                    var distanceReal = curve.GetMinDistanceToCurve(polyline) + 0.01;
+                    var distanceReal = curve.GetMinDistanceToCurve(line) + 0.01;
 
                     if (distanceReal > distanceByTable)
                         continue;
-
-                    polyline.AddVertexAt(i, point, 0, 0, 0);
                     i++;
+                    flag = false;
                     break;
                 }
+
+                if (flag)
+                    polyline.RemoveVertexAt(i);
             }
 
             return polyline.NumberOfVertices - oldNumberOfVertices;
         }
+
         /// <summary>
         /// Алгоритм Джарвиса для Поиска минимальной выпуклой оболочки для полилинии
         /// </summary>
@@ -153,35 +172,52 @@ namespace Networks
 
             return result;
         }
+
+        public static Polyline Join(this Curve firstCurve, Curve secondCurve)
+        {
+            if (firstCurve is Polyline fc && secondCurve is Polyline sc)
+                return fc.Join(sc).Jarvis();
+            if (firstCurve is Polyline fc2 && secondCurve is Line sc2)
+                return fc2.Join(sc2).Jarvis();
+            if (firstCurve is Line fc3 && secondCurve is Polyline sc3)
+                return fc3.Join(sc3).Jarvis();
+            if (firstCurve is Line fc4 && secondCurve is Line sc4)
+                return fc4.Join(sc4).Jarvis();
+            throw new ArgumentException("Only line and polyline are allowed");
+        }
+
         public static Polyline Join(this Polyline firstPolyline, Polyline secondPolyline)
         {
             var polylineCopy = firstPolyline.Clone() as Polyline;
-            if (polylineCopy is null)
-                return new Polyline();
+            if (polylineCopy is null || secondPolyline is null)
+                return null;
 
             for (int i = 0; i < secondPolyline.NumberOfVertices; i++)
             {
                 polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices,
-                    secondPolyline.GetPoint2dAt(i),0,0,0);
+                    secondPolyline.GetPoint2dAt(i), 0, 0, 0);
             }
 
             return polylineCopy;
         }
+
         public static Polyline Join(this Polyline polyline, Line line)
         {
             var polylineCopy = polyline.Clone() as Polyline;
             if (polylineCopy is null)
                 return new Polyline();
 
-            polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices,line.StartPoint.Convert2d(new Plane()),0,0,0);
-            polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices,line.EndPoint.Convert2d(new Plane()),0,0,0);
+            polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices, line.StartPoint.Convert2d(new Plane()), 0, 0, 0);
+            polylineCopy.AddVertexAt(polylineCopy.NumberOfVertices, line.EndPoint.Convert2d(new Plane()), 0, 0, 0);
 
             return polylineCopy;
         }
+
         public static Polyline Join(this Line line, Polyline polyline)
         {
             return polyline.Join(line);
         }
+
         public static Polyline Join(this Line firstLine, Line secondLine)
         {
             Polyline result = new Polyline()
@@ -189,18 +225,66 @@ namespace Networks
                 Layer = firstLine.Layer
             };
 
-            result.AddVertexAt(0,firstLine.StartPoint.Convert2d(new Plane()),0,0,0);
-            result.AddVertexAt(1,firstLine.EndPoint.Convert2d(new Plane()),0,0,0);
-            result.AddVertexAt(2,secondLine.StartPoint.Convert2d(new Plane()),0,0,0);
-            result.AddVertexAt(3,secondLine.EndPoint.Convert2d(new Plane()),0,0,0);
-            
+            result.AddVertexAt(0, firstLine.StartPoint.Convert2d(new Plane()), 0, 0, 0);
+            result.AddVertexAt(1, firstLine.EndPoint.Convert2d(new Plane()), 0, 0, 0);
+            result.AddVertexAt(2, secondLine.StartPoint.Convert2d(new Plane()), 0, 0, 0);
+            result.AddVertexAt(3, secondLine.EndPoint.Convert2d(new Plane()), 0, 0, 0);
+
             return result;
         }
+
+        public static Polyline TryJoin(this Polyline polyline, Polyline first, Polyline second)
+        {
+            if (first is null && second is null)
+                return null;
+            if (first is null)
+                polyline = polyline.Join(second);
+            else if (second is null)
+                polyline = polyline.Join(first);
+            else
+                polyline = polyline.Join(first.Length < second.Length ? first : second);
+
+            return polyline;
+        }
+
+        public static Polyline ToPolyline(this Vector3d vector, Point3d cs)
+        {
+            var result = new Polyline();
+            result.AddVertexAt(0, cs.Convert2d(new Plane()), 0, 0, 0);
+            cs += vector;
+            result.AddVertexAt(1, cs.Convert2d(new Plane()), 0, 0, 0);
+            vector *= 0.2;
+            vector = vector.RotateBy(Math.PI * 3 / 4, new Vector3d(0, 0, 1));
+            cs += vector;
+            result.AddVertexAt(2, cs.Convert2d(new Plane()), 0, 0, 0);
+
+            vector = vector.RotateBy(Math.PI * 3 / 4, new Vector3d(0, 0, 1));
+            vector *= Math.Sqrt(2);
+            cs += vector;
+            result.AddVertexAt(3, cs.Convert2d(new Plane()), 0, 0, 0);
+
+            vector = vector.RotateBy(Math.PI * 3 / 4, new Vector3d(0, 0, 1));
+            vector /= Math.Sqrt(2);
+            cs += vector;
+            result.AddVertexAt(4, cs.Convert2d(new Plane()), 0, 0, 0);
+
+            return result;
+        }
+
         public static int IntersectionsCount(this Entity first, Entity second)
         {
             Point3dCollection pts = new Point3dCollection();
             first.IntersectWith(second, Intersect.OnBothOperands, pts, IntPtr.Zero, IntPtr.Zero);
             return pts.Count;
+        }
+
+        public static Vector3d GetFirstDerivative(this Curve curve, Point3d point, bool checkEnd)
+        {
+            if (!checkEnd)
+                return curve.GetFirstDerivative(point);
+            if (point == curve.EndPoint)
+                point = curve.GetPointAtDist(curve.GetDistanceAtParameter(curve.EndParam) - 0.0001);
+            return curve.GetFirstDerivative(point);
         }
     }
 }
