@@ -15,6 +15,7 @@ namespace Networks
     {
         private const double Delta = 0.2;
         private static int MaxDepth = 30;
+        private static int dpth = 1;
         public static int MinAngle { get; set; } = 90;
 
         /// <summary>
@@ -128,8 +129,8 @@ namespace Networks
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 Curve[] ignores = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve).ToArray();
-                if (!Properties.Settings.Default.AllowIntersection)
-                    ignores = ignores.Select(x => x is Polyline y ? y.Jarvis() : x).ToArray();
+                //if (!Properties.Settings.Default.AllowIntersection)
+                //    ignores = ignores.Select(x => x is Polyline y ? y.Jarvis() : x).ToArray();
 
                 Curve[] buildingIgnores = objectIdsBuildings.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve)
                     .ToArray();
@@ -157,7 +158,7 @@ namespace Networks
 
                     var ignoresCount = Properties.Settings.Default.AllowIntersection ? 0 : ignores.Length;
 
-                    for (int j = 0; j < ignoresCount; j++)
+                    for (int j = 0; j < 0; j++)
                     {
                         for (int k = j + 1; k < ignoresCount; k++)
                         {
@@ -175,20 +176,36 @@ namespace Networks
                         }
                     }
 
-                    Polyline newLine;
-                    if (Properties.Settings.Default.AllowIntersection)
-                        newLine = ConnectPointsWithIntersect(pair.Value.First, pair.Value.Second, currentIgnores,
-                            distanceToIgnores);
-                    else
-                        newLine = ConnectPoints(pair.Value.First, pair.Value.Second, currentIgnores,
-                            distanceToIgnores);
-                    while (newLine.Simplify(ignores.Union(buildingIgnores).ToArray(), distanceToIgnores) != 0)
+                    try
                     {
-                    }
+                        Polyline newLine;
+                        if (Properties.Settings.Default.AllowIntersection)
+                            newLine = ConnectPointsWithIntersect(pair.Value.First, pair.Value.Second, currentIgnores,
+                                distanceToIgnores);
+                        else
+                        {
+                            newLine = tr.SuperConnect(pair.Value.First, pair.Value.Second, currentIgnores,
+                                distanceToIgnores, 1);
+                        }
+    
+                        ed.WriteMessage($"{dpth} ");
+                        ed.WriteMessage($"{newLine.NumberOfVertices} ");
 
-                    newLine.Layer = NetworkManager.GetNetworkName(network);
-                    tr.Draw(newLine);
-                    ignores = ignores.Append(newLine).ToArray();
+                        //while (newLine.Simplify(ignores.Union(buildingIgnores).ToArray(), distanceToIgnores) != 0)
+                        {
+                        }
+
+                        ed.WriteMessage($"{newLine.NumberOfVertices} \n");
+
+                        newLine.Layer = NetworkManager.GetNetworkName(network);
+                        tr.Draw(newLine);
+                        ignores = ignores.Append(newLine).ToArray();
+                    }
+                    catch (Exception ex)
+                    {
+                        ed.WriteMessage($"{ex.Message}\n");
+                        ed.WriteMessage($"Не удалось проложить сеть {NetworkManager.GetNetworkName(network)}\n");
+                    }
                 }
 
                 tr.Commit();
@@ -394,6 +411,314 @@ namespace Networks
             polyline.Simplify();
 
             return polyline;
+        }
+
+        private static Polyline SuperConnect(this Transaction tr, Point3d pointFrom, Point3d pointTo,
+            IReadOnlyList<Curve> curves,
+            IReadOnlyList<double> distances, int depth)
+        {
+            if (depth > dpth)
+                dpth = depth;
+            if (depth > MaxDepth)
+                return null;
+            Polyline polyline = new Polyline();
+            polyline.AddVertexAt(polyline.NumberOfVertices, pointFrom.Convert2d(new Plane()), 0, 0, 0);
+            var stopper = 0;
+            const int maxIterations = 1000;
+            while (polyline.EndPoint.DistanceTo(pointTo) > 2 * Delta && stopper < maxIterations)
+            {
+                ++stopper;
+                pointFrom = GetLastGoodPoint(pointFrom, pointTo, curves, distances);
+                polyline.AddVertexAt(polyline.NumberOfVertices, pointFrom.Convert2d(new Plane()), 0, 0, 0);
+                for (int i = 0; i < curves.Count; i++)
+                {
+                    var curve = curves[i];
+                    var distance = distances[i];
+                    if (pointFrom.DistanceTo(curve.GetClosestPointTo(pointFrom, false)) >= distance + Delta)
+                        continue;
+
+                    var pointFromWithOutIntersect =
+                        tr.GetPointWithOutIntersect2(pointFrom, pointTo, curve, distance);
+                    var pointFromWithIntersect = GetPointWithIntersect(pointFrom, pointTo, curve, distance);
+                    
+                    if (MayNotIntersect(curve,pointFrom,pointTo,distance,curves,distances) &&
+                        CanIntersect(curve, pointFrom, pointTo))
+                    {
+                        foreach (var VARIABLE in pointFromWithOutIntersect)
+                        {
+                            //polyline.AddVertexAt(polyline.NumberOfVertices,VARIABLE.Convert2d(new Plane()),0,0,0);
+                        }
+                        var variant1 = tr.SuperConnect(pointFromWithOutIntersect.First(), pointTo, curves, distances,
+                            depth + 1);
+                        var variant2 = tr.SuperConnect(pointFromWithIntersect, pointTo, curves, distances, depth + 1);
+                        tr.Draw(polyline.Join(variant1));
+                        tr.Draw(polyline.Join(variant2));
+                        polyline = polyline.TryJoin(variant1, variant2);
+                    }
+                    else if (MayNotIntersect(curve,pointFrom,pointTo,distance,curves,distances))
+                    {
+                        foreach (var point in pointFromWithOutIntersect)
+                        {
+                            polyline.AddVertexAt(polyline.NumberOfVertices,point.Convert2d(new Plane()),0,0,0);
+                        }
+                        Polyline variant1 = tr.SuperConnect(polyline.EndPoint, pointTo, curves, distances,
+                            depth + 1);
+                        polyline = polyline.Join(variant1);
+                        tr.Draw(polyline);
+                    }
+                    else if (CanIntersect(curve, pointFrom, pointTo))
+                    {
+                        Polyline variant2 =
+                            tr.SuperConnect(pointFromWithIntersect, pointTo, curves, distances, depth + 1);
+                        polyline = polyline.Join(variant2);
+                        tr.Draw(polyline);
+                    }
+                    else
+                    {
+                        return null;
+                    }
+
+                    if (polyline is null) return null;
+                    pointFrom = polyline.EndPoint;
+                }
+
+                polyline.AddVertexAt(polyline.NumberOfVertices, pointFrom.Convert2d(new Plane()), 0, 0, 0);
+            }
+
+            polyline.AddVertexAt(polyline.NumberOfVertices, pointTo.Convert2d(new Plane()), 0, 0, 0);
+            //polyline.Simplify();
+            //tr.Draw(polyline);
+            if (stopper >= maxIterations || polyline.NumberOfVertices <= 1)
+                return null;
+
+            return polyline;
+        }
+
+        private static Point3d GetPointWithIntersect(Point3d pointFrom, Point3d pointTo, Curve curve, double distance)
+        {
+            var pointFromWithIntersect = pointFrom;
+            var vector1 = pointTo - pointFromWithIntersect;
+            var point = curve.GetClosestPointTo(pointFromWithIntersect, false);
+            var vector2 = curve.GetFirstDerivative(point, true);
+            var angle = vector1.GetAngleTo(vector2) / Math.PI * 180;
+            if (angle > 90)
+                angle = 180 - angle;
+            var vector3d = pointTo - pointFromWithIntersect;
+            vector3d *= Delta / vector3d.Length;
+            if (angle < MinAngle)
+            {
+                var deltaAngle = MinAngle - angle;
+                deltaAngle = deltaAngle / 180 * Math.PI;
+                vector3d = vector3d.RotateBy(deltaAngle, new Vector3d(0, 0, 1));
+                angle = vector1.GetAngleTo(vector2) / Math.PI * 180;
+                if (angle < MinAngle)
+                    vector3d = vector3d.RotateBy(-2 * deltaAngle, new Vector3d(0, 0, 1));
+            }
+
+            do
+            {
+                pointFromWithIntersect += vector3d;
+            } while (pointFromWithIntersect.DistanceTo(curve.GetClosestPointTo(pointFromWithIntersect, false)) <
+                     distance);
+
+            return pointFromWithIntersect;
+        }
+
+        private static Point3d GetPointWithOutIntersect(Point3d pointFrom, Point3d pointTo, Curve curve,
+            double distance)
+        {
+            var pointFromWithOutIntersect = pointFrom;
+            Point3d pointToCheck;
+            do
+            {
+                var vector3d = curve.GetFirstDerivative(curve.GetClosestPointTo(pointFromWithOutIntersect, false));
+                vector3d *= Delta / vector3d.Length;
+                var point1 = pointFrom + vector3d;
+                var point2 = pointFrom - vector3d;
+
+                if (pointTo.DistanceTo(point1) < pointTo.DistanceTo(point2))
+                    pointFromWithOutIntersect += vector3d;
+                else
+                    pointFromWithOutIntersect -= vector3d;
+
+                var vector = pointTo - pointFromWithOutIntersect;
+                vector *= Delta / vector.Length;
+                pointToCheck = pointFromWithOutIntersect + vector;
+            } while (pointFromWithOutIntersect.DistanceTo(curve.GetClosestPointTo(pointFromWithOutIntersect,
+                         false)) < distance ||
+                     pointToCheck.DistanceTo(curve.GetClosestPointTo(pointToCheck,
+                         false)) < distance);
+
+            return pointFromWithOutIntersect;
+        }
+
+        private static IEnumerable<Point3d> GetPointWithOutIntersect2(this Transaction tr, Point3d pointFrom, Point3d pointTo,
+            Curve curve,
+            double distance)
+        {
+            //if (curve is Polyline pl)
+            //    curve = pl.Jarvis();
+            Vector3d vectorMem = new Vector3d();
+            var signMem = 0;
+            var pointFromWithOutIntersect = pointFrom;
+            Point3d pointToCheck;
+            do
+            {
+                Vector3d vectorToCheck;
+                var vector3d = curve.GetFirstDerivative(curve.GetClosestPointTo(pointFromWithOutIntersect, false));
+                vector3d *= Delta / vector3d.Length;
+                //tr.Draw(vector3d.ToPolyline(pointFromWithOutIntersect));
+                if (vectorMem == vector3d)
+                {
+                    pointFromWithOutIntersect += vector3d * signMem;
+                    if (curve.GetClosestPointTo(pointFromWithOutIntersect, false)
+                            .DistanceTo(pointFromWithOutIntersect) < distance)
+                    {
+                        var vector = pointFromWithOutIntersect -
+                                     curve.GetClosestPointTo(pointFromWithOutIntersect, false);
+                        var old = vector;
+                        var len = vector.Length;
+                        vector *= distance / len;
+                        vector = vector.Subtract(old);
+                        pointFromWithOutIntersect += vector;
+                    }
+
+                    vectorToCheck = pointTo - pointFromWithOutIntersect;
+                    vectorToCheck *= Delta / vectorToCheck.Length;
+                    pointToCheck = pointFromWithOutIntersect + vectorToCheck;
+                    
+                    continue;
+                }
+
+                var point1 = pointFromWithOutIntersect + vector3d;
+                var point2 = pointFromWithOutIntersect - vector3d;
+
+                if (pointTo.DistanceTo(point1) < pointTo.DistanceTo(point2))
+                {
+                    pointFromWithOutIntersect += vector3d;
+                    signMem = 1;
+                }
+                else
+                {
+                    pointFromWithOutIntersect -= vector3d;
+                    signMem = -1;
+                }
+
+                if (curve.GetClosestPointTo(pointFromWithOutIntersect, false).DistanceTo(pointFromWithOutIntersect) <
+                    distance)
+                {
+                    var vector = pointFromWithOutIntersect - curve.GetClosestPointTo(pointFromWithOutIntersect, false);
+                    var old = vector;
+                    var len = vector.Length;
+                    vector *= distance / len;
+                    vector = vector.Subtract(old);
+                    pointFromWithOutIntersect += vector;
+                }
+
+                vectorToCheck = pointTo - pointFromWithOutIntersect;
+                vectorToCheck *= Delta / vectorToCheck.Length;
+                pointToCheck = pointFromWithOutIntersect + vectorToCheck;
+                vectorMem = vector3d;
+                yield return pointFromWithOutIntersect;
+            } while (pointFromWithOutIntersect.DistanceTo(curve.GetClosestPointTo(pointFromWithOutIntersect,
+                         false)) < distance ||
+                     pointToCheck.DistanceTo(curve.GetClosestPointTo(pointToCheck,
+                         false)) < distance);
+
+            yield return pointFromWithOutIntersect;
+        }
+
+        private static Point3d GetPointWithOutIntersect3(Point3d pointFrom, Point3d pointTo, Curve curve,
+            double distance, IReadOnlyList<Curve> curves,
+            IReadOnlyList<double> distances)
+        {
+            var pointFromWithOutIntersect = pointFrom;
+            Vector3d vectorMem = curve.GetFirstDerivative(curve.GetClosestPointTo(pointFromWithOutIntersect, false),true);
+            vectorMem *= Delta / vectorMem.Length;
+            Vector3d vector3d;
+            var point1 = pointFrom + vectorMem;
+            var point2 = pointFrom - vectorMem;
+            Point3d pointToCheck;
+            double[] currentDistances;
+            var sign = pointTo.DistanceTo(point1) < pointTo.DistanceTo(point2) ? 1 : -1;
+            do
+            {
+                vector3d = curve.GetFirstDerivative(curve.GetClosestPointTo(pointFromWithOutIntersect, false),true);
+                vector3d *= Delta / vector3d.Length;
+
+                pointFromWithOutIntersect += sign * vectorMem;
+                var vectorToCheck = pointTo - pointFromWithOutIntersect;
+                vectorToCheck *= Delta / vectorToCheck.Length;
+                pointToCheck = pointFromWithOutIntersect + vectorToCheck;
+                currentDistances = curves.Select(x =>
+                        x.GetClosestPointTo(pointFromWithOutIntersect, false).DistanceTo(pointFromWithOutIntersect))
+                    .ToArray();
+                for (int i = 0; i < currentDistances.Length; i++)
+                {
+                    currentDistances[i] -= distances[i];
+                }
+            } while (vectorMem == vector3d &&
+                     pointToCheck.DistanceTo(curve.GetClosestPointTo(pointToCheck, false)) < distance//);
+            && currentDistances.All(x=>x>0));
+
+            return pointFromWithOutIntersect;
+        }
+
+        private static Point3d GetLastGoodPoint(Point3d pointFrom, Point3d pointTo, IReadOnlyList<Curve> curves,
+            IReadOnlyList<double> distances)
+        {
+            double[] currentDistances;
+            Vector3d vector3d;
+            do
+            {
+                vector3d = pointTo - pointFrom;
+                vector3d *= Delta / vector3d.Length;
+                pointFrom += vector3d;
+                currentDistances = curves.Select(x => pointFrom.DistanceTo(x.GetClosestPointTo(pointFrom, false)))
+                    .ToArray();
+                for (int i = 0; i < currentDistances.Length; i++)
+                {
+                    currentDistances[i] -= distances[i];
+                }
+            } while (pointFrom.DistanceTo(pointTo) > 2 * Delta
+                     && currentDistances.All(x => x > 0));
+
+            if (pointFrom.DistanceTo(pointTo) < 2 * Delta)
+                return pointTo;
+            pointFrom -= vector3d;
+            return pointFrom;
+        }
+
+        private static bool CanIntersect(Entity entity, Point3d pointFrom, Point3d pointTo)
+        {
+            //return false;
+            var count = entity.IntersectionsCount(new Line(pointFrom, pointTo));
+            return count == 1 || count == 2;
+        }
+
+        private static bool MayNotIntersect(Curve curve, Point3d pointFrom, Point3d pointTo, double distance,
+            IReadOnlyList<Curve> curves,
+            IReadOnlyList<double> distances)
+        {
+            var pointFromWithOutIntersect = pointFrom;
+            Vector3d vectorMem = curve.GetFirstDerivative(curve.GetClosestPointTo(pointFromWithOutIntersect, false), true);
+            vectorMem *= Delta / vectorMem.Length;
+            var point1 = pointFrom + vectorMem;
+            var point2 = pointFrom - vectorMem;
+            var sign = pointTo.DistanceTo(point1) < pointTo.DistanceTo(point2) ? 1 : -1;
+            pointFromWithOutIntersect += sign * vectorMem;
+            var currentDistances = curves.Select(x =>
+                    x.GetClosestPointTo(pointFromWithOutIntersect, false).DistanceTo(pointFromWithOutIntersect))
+                .ToArray();
+            for (int i = 0; i < currentDistances.Length; i++)
+            {
+                currentDistances[i] -= distances[i];
+            }
+            //} while (vectorMem == vector3d &&
+            //         pointToCheck.DistanceTo(curve.GetClosestPointTo(pointToCheck, false)) < distance);
+            //&& currentDistances.All(x=>x>0));
+
+            return currentDistances.All(x => x > 0);
         }
 
         public static Pair<Point3d, Point3d> GetStartEndPoints()
