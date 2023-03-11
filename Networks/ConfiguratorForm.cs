@@ -9,7 +9,7 @@ namespace Networks
         public ConfiguratorForm()
         {
             InitializeComponent();
-            var layers = AutocadHelper.GetAllLayers();
+            var layers = AutocadUtilities.GetAllLayers();
             WaterPipeComboBox.Items.AddRange(layers.Cast<object>().ToArray());
             SewerComboBox.Items.AddRange(layers.Cast<object>().ToArray());
             HeatingNetworksComboBox.Items.AddRange(layers.Cast<object>().ToArray());

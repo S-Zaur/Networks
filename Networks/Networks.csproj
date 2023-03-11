@@ -74,6 +74,7 @@
     <Compile Include="ACADHelperTemp.cs" />
     <Compile Include="AutocadExtensions.cs" />
     <Compile Include="AutocadHelper.cs" />
+    <Compile Include="AutocadUtilities.cs" />
     <Compile Include="ConfiguratorForm.cs">
       <SubType>Form</SubType>
     </Compile>

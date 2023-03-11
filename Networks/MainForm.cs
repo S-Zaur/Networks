@@ -49,7 +49,7 @@ namespace Networks
             }
 
             NetworkManager.SetLayers();
-            AutocadHelper.CheckLayers();
+            AutocadUtilities.CheckLayers();
             WaterPipesCheckBox.Tag = Networks.WaterPipe;
             SewersCheckBox.Tag = Networks.Sewer;
             HeatingNetworksCheckBox.Tag = Networks.HeatingNetworks;
@@ -72,7 +72,7 @@ namespace Networks
             ConfiguratorForm form = new ConfiguratorForm();
             Autodesk.AutoCAD.ApplicationServices.Application.ShowModalDialog(form);
             NetworkManager.SetLayers();
-            AutocadHelper.CheckLayers();
+            AutocadUtilities.CheckLayers();
         }
 
         private void CheckBox_CheckedChanged(object sender, EventArgs e)
