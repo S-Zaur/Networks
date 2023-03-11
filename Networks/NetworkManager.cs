@@ -39,53 +39,6 @@ namespace Networks
 
     internal static class NetworkManager
     {
-        /// <summary>
-        /// Реализация алгоритма Нарайаны для поиска всех перестановок
-        /// </summary>
-        public static class Narayana
-        {
-            /// <summary>
-            /// Функция, задающая отношение порядка для значений типа T: &lt; либо &gt;
-            /// </summary>
-            public delegate bool Predicate2<T>(T value0, T value1);
-
-            /// <summary>
-            /// Поиск очередной перестановки
-            /// </summary>
-            public static bool NextPermutation<T>(T[] sequence, Predicate2<T> compare)
-            {
-                // Этап № 1
-                var i = sequence.Length;
-                do
-                {
-                    if (i < 2)
-                        return false; // Перебор закончен
-                    --i;
-                } while (!compare(sequence[i - 1], sequence[i]));
-
-                // Этап № 2
-                var j = sequence.Length;
-                while (i < j && !compare(sequence[i - 1], sequence[--j]))
-                {
-                }
-
-                SwapItems(sequence, i - 1, j);
-                // Этап № 3
-                j = sequence.Length;
-                while (i < --j)
-                    SwapItems(sequence, i++, j);
-                return true;
-            }
-
-            /// <summary>
-            /// Обмен значениями двух элементов последовательности
-            /// </summary>
-            private static void SwapItems<T>(T[] sequence, int index0, int index1)
-            {
-                (sequence[index1], sequence[index0]) = (sequence[index0], sequence[index1]);
-            }
-        }
-
         private static int _gasPipeType = 0;
 
         /// <summary>
