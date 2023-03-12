@@ -11,7 +11,7 @@ namespace Networks
     [SuppressMessage("ReSharper", "LocalizableElement")]
     public partial class MainForm : Form
     {
-        private static readonly DateTime StopDate = new DateTime(2023, 3, 13);
+        private static readonly DateTime StopDate = new DateTime(2023, 3, 20);
 
         private readonly Dictionary<Networks, Pair<Point3d, Point3d>> _points =
             new Dictionary<Networks, Pair<Point3d, Point3d>>();
@@ -129,6 +129,7 @@ namespace Networks
 
         private void StrictModeToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // TODO Вопрос нужна ли настройка строго режима
             Properties.Settings.Default.AllowIntersection = StrictModeToolStripMenuItem.Checked;
             Properties.Settings.Default.Save();
         }
