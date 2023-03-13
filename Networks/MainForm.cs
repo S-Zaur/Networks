@@ -36,6 +36,7 @@ namespace Networks
 
         public MainForm()
         {
+            // TODO возможность отмены работы функции
             if (GetCurrentDate() > StopDate)
                 return;
             InitializeComponent();
@@ -129,7 +130,7 @@ namespace Networks
 
         private void StrictModeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // TODO Вопрос нужна ли настройка строго режима
+            // Вопрос нужна ли настройка строго режима Оставить строгий режим
             Properties.Settings.Default.AllowIntersection = StrictModeToolStripMenuItem.Checked;
             Properties.Settings.Default.Save();
         }
