@@ -10,9 +10,6 @@ namespace Networks
 {
     internal static class AutocadExtensions
     {
-        /// <summary>
-        /// Минимальное расстояние от кривой до кривой
-        /// </summary>
         public static double GetMinDistanceToCurve(this Curve firstCurve, Curve secondCurve)
         {
             PointOnCurve3d[] pointOnCurve3d = firstCurve.GetGeCurve().GetClosestPointTo(secondCurve.GetGeCurve());
@@ -21,12 +18,7 @@ namespace Networks
                 secondCurve.GetClosestPointTo(pointOnFirstCurveClosestToSecondCurve, false);
             return pointOnFirstCurveClosestToSecondCurve.DistanceTo(pointOnSecondCurveClosestToFirstCurve);
         }
-
-        /// <summary>
-        /// Добавление объекта на чертеж
-        /// </summary>
-        /// <param name="transaction"></param>
-        /// <param name="entity">Объект который небходимо добавить на чертеж</param>
+        
         public static void Draw(this Transaction transaction, Entity entity)
         {
             if (entity is null) return;
@@ -105,12 +97,7 @@ namespace Networks
 
             return polyline.NumberOfVertices - oldNumberOfVertices;
         }
-
-        /// <summary>
-        /// Алгоритм Джарвиса для Поиска минимальной выпуклой оболочки для полилинии
-        /// </summary>
-        /// <param name="polyline"></param>
-        /// <returns></returns>
+        
         public static Polyline Jarvis(this Polyline polyline)
         {
             var polylineCopy = polyline.Clone() as Polyline;

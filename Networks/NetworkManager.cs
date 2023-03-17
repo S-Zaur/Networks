@@ -26,12 +26,8 @@ namespace Networks
 
     internal static class NetworkManager
     {
-        private static int _gasPipeType = 0;
-
-        /// <summary>
-        /// Матрица расстояний между коммункациями
-        /// Индексы соответствуют перечислению Networks
-        /// </summary>
+        private static int _gasPipeType;
+        
         private static readonly double[,] Distances =
         {
             { 1.0, 1.5, 0.5, 0.5, 1.5 }, // Водопровод
@@ -40,10 +36,7 @@ namespace Networks
             { 0.5, 0.5, 0.5, 0.0, 1.0 }, // Кабели связи
             { 1.5, 1.0, 2.0, 1.0, 0.0 }, // Теплосети от наружной стенки
         };
-
-        /// <summary>
-        /// Матрица расстояний от коммуникаций до зданий
-        /// </summary>
+        
         private static readonly double[,] DistancesToBuildings =
         {
             //фунд  бк  нбр  вл1  вл35 вл>  кр.лин
@@ -68,22 +61,13 @@ namespace Networks
             { 1.0, 1.0, 1.0, 1.0 }, // Опора влэп >
             { 0.1, 0.1, 0.1, 0.1 }, // Красная линия
         };
-
-        /// <summary>
-        /// Словарь названий слоев сетей
-        /// </summary>
+        
         private static readonly Dictionary<Networks, string> LayerNames = new Dictionary<Networks, string>();
-
-        /// <summary>
-        /// Словарь сетей по названию слоя
-        /// </summary>
+        
         private static readonly Dictionary<string, Networks> NetworksMap = new Dictionary<string, Networks>();
 
         private static readonly Dictionary<string, Buildings> BuildingsMap = new Dictionary<string, Buildings>();
-
-        /// <summary>
-        /// Получение допустимого расстояния между двумя типами коммуникаций
-        /// </summary>
+        
         public static double GetDistance(Networks firstNetwork, Networks secondNetwork)
         {
             if (firstNetwork == Networks.GasPipe)
@@ -92,16 +76,11 @@ namespace Networks
                 return DistancesToGasPipe[(int)firstNetwork, _gasPipeType];
             return Distances[(int)firstNetwork, (int)secondNetwork];
         }
-
-        /// <summary>
-        /// Получение допустимого расстояния между коммуникацией и зданием
-        /// </summary>
+        
         public static double GetDistanceToBuilding(Networks network, Buildings building)
         {
             if (network == Networks.GasPipe)
-            {
                 return DistancesToGasPipe[(int)building + 6, _gasPipeType];
-            }
 
             int nw;
             switch (network)
@@ -124,17 +103,7 @@ namespace Networks
 
             return DistancesToBuildings[nw, (int)building];
         }
-
-        /// <summary>
-        /// Задание типа труб водопровода
-        /// </summary>
-        /// <remarks>
-        /// <para> 
-        /// Чтобы учесть Прим. 2 Таблицы 12.6 СП 42.13330.2016
-        /// </para>
-        /// </remarks>
-        /// <param name="type">Название типа трубы</param>
-        /// <param name="size">Размер трубы</param>
+        
         public static void SetPipeType(string type, double size)
         {
             double distance;
@@ -172,37 +141,28 @@ namespace Networks
             else
                 _gasPipeType = 3;
         }
-
-        /// <summary>
-        /// Получение названия коммуникации по ее типу
-        /// </summary>
+        
         public static string GetNetworkName(Networks network)
         {
             if (LayerNames.ContainsKey(network))
                 return LayerNames[network];
             return "0";
         }
-
-        /// <summary>
-        /// Получение типа коммуникации по ее названию
-        /// </summary>
+        
         public static Networks GetType(string typeName)
         {
             if (NetworksMap.ContainsKey(typeName))
                 return NetworksMap[typeName];
-            throw new Exception("Ошибка слоя");
+            throw new Exception($"Ошибка слоя: {typeName}");
         }
 
         public static Buildings GetBuildingType(string typeName)
         {
             if (BuildingsMap.ContainsKey(typeName))
                 return BuildingsMap[typeName];
-            throw new Exception("Ошибка слоя");
+            throw new Exception($"Ошибка слоя: {typeName}");
         }
-
-        /// <summary>
-        /// Установка названий слоев
-        /// </summary>
+        
         public static void SetLayers()
         {
             LayerNames.Clear();

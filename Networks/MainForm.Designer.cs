@@ -182,7 +182,7 @@
             this.MinAngleToolStripTextBox.Size = new System.Drawing.Size(100, 27);
             this.MinAngleToolStripTextBox.Text = "90";
             this.MinAngleToolStripTextBox.ToolTipText = "Мин. улог пересечения";
-            this.MinAngleToolStripTextBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.toolStripTextBox1_KeyPress);
+            this.MinAngleToolStripTextBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.MinAngleToolStripTextBox_KeyPress);
             this.MinAngleToolStripTextBox.TextChanged += new System.EventHandler(this.MinAngleToolStripTextBox_TextChanged);
             // 
             // CommunictionLabel

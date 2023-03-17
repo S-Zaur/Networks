@@ -11,7 +11,7 @@ namespace Networks
     [SuppressMessage("ReSharper", "LocalizableElement")]
     public partial class MainForm : Form
     {
-        private static readonly DateTime StopDate = new DateTime(2023, 3, 20);
+        private static readonly DateTime StopDate = new DateTime(2023, 4, 1);
 
         private readonly Dictionary<Networks, Pair<Point3d, Point3d>> _points =
             new Dictionary<Networks, Pair<Point3d, Point3d>>();
@@ -36,7 +36,7 @@ namespace Networks
 
         public MainForm()
         {
-            // TODO возможность отмены работы функции
+            // TODO Возможность отмены работы функции
             if (GetCurrentDate() > StopDate)
                 return;
             InitializeComponent();
@@ -130,12 +130,12 @@ namespace Networks
 
         private void StrictModeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Вопрос нужна ли настройка строго режима Оставить строгий режим
+            // ВОПРОС Нужна ли настройка строго режима? Оставить строгий режим
             Properties.Settings.Default.AllowIntersection = StrictModeToolStripMenuItem.Checked;
             Properties.Settings.Default.Save();
         }
 
-        private void toolStripTextBox1_KeyPress(object sender, KeyPressEventArgs e)
+        private void MinAngleToolStripTextBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             char number = e.KeyChar;
             if (!char.IsDigit(number) && number != 8)

@@ -23,8 +23,9 @@ namespace Networks
     [SuppressMessage("ReSharper", "AccessToStaticMemberViaDerivedType")]
     internal static class AutocadHelper
     {
-        // Вопрос нужна ли настройка шага? пока оставить так
-        private const double Delta = 0.33;
+        // Большой TODO Возможность сместить сроящуюся кривую к какой-то другой
+        // ВОПРОС Нужна ли настройка шага? пока оставить так
+        private const double Delta = 0.2;
         private const int MaxDepth = 15;
         public static int MinAngle { get; set; } = 90;
         private static readonly PolylineComparer Comparer = new PolylineComparer();
@@ -69,9 +70,6 @@ namespace Networks
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 Curve[] ignores = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve).ToArray();
-                //if (!Properties.Settings.Default.AllowIntersection)
-                //    ignores = ignores.Select(x => x is Polyline y ? y.Jarvis() : x).ToArray();
-
                 Curve[] buildingIgnores = objectIdsBuildings.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve)
                     .ToArray();
 
@@ -89,12 +87,18 @@ namespace Networks
                     currentIgnores = currentIgnores.Concat(buildingIgnores).ToArray();
                     distanceToIgnores = distanceToIgnores.Concat(distanceToBuildingIgnores).ToArray();
 
-                    if (network == Networks.WaterPipe && sizes[0] != 0)
-                        distanceToIgnores = distanceToIgnores.Select(x => x + sizes[0] / 2).ToArray();
-                    if (network == Networks.Sewer && sizes[1] != 0)
-                        distanceToIgnores = distanceToIgnores.Select(x => x + sizes[1] / 2).ToArray();
-                    if (network == Networks.HeatingNetworks && sizes[2] != 0)
-                        distanceToIgnores = distanceToIgnores.Select(x => x + sizes[2] / 2).ToArray();
+                    switch (network)
+                    {
+                        case Networks.WaterPipe:
+                            distanceToIgnores = distanceToIgnores.Select(x => x + sizes[0] / 2).ToArray();
+                            break;
+                        case Networks.Sewer:
+                            distanceToIgnores = distanceToIgnores.Select(x => x + sizes[1] / 2).ToArray();
+                            break;
+                        case Networks.HeatingNetworks:
+                            distanceToIgnores = distanceToIgnores.Select(x => x + sizes[2] / 2).ToArray();
+                            break;
+                    }
 
                     var ignoresCount = Properties.Settings.Default.AllowIntersection ? 0 : ignores.Length;
 
@@ -116,34 +120,23 @@ namespace Networks
                         }
                     }
 
-                    //try
+                    try
                     {
-                        Polyline newLine;
-                        // if (Properties.Settings.Default.AllowIntersection)
-                        //     newLine = ConnectPointsWithIntersect(pair.Value.First, pair.Value.Second, currentIgnores,
-                        //         distanceToIgnores);
-                        // else
-                        {
-                            _ignoredCurves = currentIgnores;
-                            _distancesToIgnoredCurves = distanceToIgnores;
-                            newLine = SuperConnect(pair.Value.First, pair.Value.Second, 1);
-                        }
-
-                        ed.WriteMessage($"{newLine.NumberOfVertices} ");
+                        _ignoredCurves = currentIgnores;
+                        _distancesToIgnoredCurves = distanceToIgnores;
+                        var newLine = ConnectPoints(pair.Value.First, pair.Value.Second, 1);
 
                         //while (newLine.Simplify(ignores.Union(buildingIgnores).ToArray(), distanceToIgnores) != 0)
                         {
                         }
 
-                        ed.WriteMessage($"{newLine.NumberOfVertices} \n");
-
                         newLine.Layer = NetworkManager.GetNetworkName(network);
                         tr.Draw(newLine);
                         ignores = ignores.Append(newLine).ToArray();
+                        // TODO Добавлять игнорируемые с учетом размеров
                     }
-                    //catch (Exception ex)
+                    catch (Exception)
                     {
-                        //ed.WriteMessage($"{ex.Message}\n");
                         ed.WriteMessage($"Не удалось проложить сеть {NetworkManager.GetNetworkName(network)}\n");
                     }
                 }
@@ -152,62 +145,49 @@ namespace Networks
             }
         }
 
-        private static Polyline SuperConnect(Point3d pointFrom, Point3d pointTo, int depth)
+        private static Polyline ConnectPoints(Point3d pointFrom, Point3d pointTo, int depth)
         {
-            // TODO учесть строения
+            // ВОПРОС Сейчас находит лучшее либо ничего. Если не получислось построить лучшее вернуть почти лучшее?
+            // TODO Оптимизация работы если конечная точка на кривой
             if (depth > MaxDepth)
                 return null;
             Polyline polyline = new Polyline();
             polyline.AddVertexAt(polyline.NumberOfVertices, pointFrom.Convert2d(new Plane()), 0, 0, 0);
-            var stopper = 0;
-            const int maxIterations = 1000;
-            while (polyline.EndPoint.DistanceTo(pointTo) > 2 * Delta && stopper < maxIterations)
+
+            pointFrom = GetLastGoodPoint(pointFrom, pointTo);
+            polyline.AddVertexAt(polyline.NumberOfVertices, pointFrom.Convert2d(new Plane()), 0, 0, 0);
+
+            for (int i = 0; i < _ignoredCurves.Count; i++)
             {
-                ++stopper;
-                pointFrom = GetLastGoodPoint(pointFrom, pointTo);
-                polyline.AddVertexAt(polyline.NumberOfVertices, pointFrom.Convert2d(new Plane()), 0, 0, 0);
-                for (int i = 0; i < _ignoredCurves.Count; i++)
+                var curve = _ignoredCurves[i];
+                var distance = _distancesToIgnoredCurves[i];
+                if (pointFrom.DistanceTo(curve.GetClosestPointTo(pointFrom, false)) >= distance + Delta)
+                    continue;
+
+                var pointsWithOutIntersect =
+                    GetPointWithOutIntersect(pointFrom, pointTo, curve, distance).ToArray();
+                if (pointsWithOutIntersect.Length == 0) return null;
+
+                List<Polyline> variants = new List<Polyline>();
+
+                foreach (var point in pointsWithOutIntersect)
                 {
-                    var curve = _ignoredCurves[i];
-                    var distance = _distancesToIgnoredCurves[i];
-                    if (pointFrom.DistanceTo(curve.GetClosestPointTo(pointFrom, false)) >= distance + Delta)
+                    polyline.AddVertexAt(polyline.NumberOfVertices, point.Convert2d(new Plane()), 0, 0, 0);
+                    if (!CanIntersect(curve, point, pointTo))
                         continue;
-
-                    var pointFromWithOutIntersect =
-                        GetPointWithOutIntersect(pointFrom, pointTo, curve, distance).ToArray();
-
-                    List<Polyline> variants = new List<Polyline>();
-
-                    foreach (var point in pointFromWithOutIntersect)
-                    {
-                        polyline.AddVertexAt(polyline.NumberOfVertices, point.Convert2d(new Plane()), 0, 0, 0);
-                        if (!CanIntersect(curve, point, pointTo))
-                            continue;
-                        var pointFromWithIntersect = GetPointWithIntersect(point, pointTo, curve, distance);
-                        variants.Add(polyline.Join(SuperConnect(pointFromWithIntersect, pointTo, depth + 1)));
-                    }
-
-                    variants.Add(polyline.Join(SuperConnect(pointFromWithOutIntersect.Last(), pointTo, depth + 1)));
-
-                    variants = variants.Where(x => x is object).ToList();
-                    if (variants.Count == 0)
-                        return null;
-                    variants.Sort(Comparer);
-
-                    polyline = variants.First();
-
-                    if (polyline is null) return null;
-                    pointFrom = polyline.EndPoint;
+                    var pointFromWithIntersect = GetPointWithIntersect(point, pointTo, curve, distance);
+                    variants.Add(polyline.Join(ConnectPoints(pointFromWithIntersect, pointTo, depth + 1)));
                 }
 
-                polyline.AddVertexAt(polyline.NumberOfVertices, pointFrom.Convert2d(new Plane()), 0, 0, 0);
-            }
+                variants.Add(polyline.Join(ConnectPoints(pointsWithOutIntersect.Last(), pointTo, depth + 1)));
 
-            polyline.AddVertexAt(polyline.NumberOfVertices, pointTo.Convert2d(new Plane()), 0, 0, 0);
-            //polyline.Simplify();
-            //tr.Draw(polyline);
-            if (stopper >= maxIterations || polyline.NumberOfVertices <= 1)
-                return null;
+                variants = variants.Where(x => x is object).ToList();
+                if (variants.Count == 0)
+                    return null;
+                variants.Sort(Comparer);
+                polyline = variants.First();
+                break;
+            }
 
             return polyline;
         }
@@ -246,12 +226,13 @@ namespace Networks
             Curve curve,
             double distance)
         {
-            // TODO учесть остальные кривые
-            // TODO не менять точку если нельзя двинуть
+            // TODO Можно поробовать идти в обе стороны
+            // TODO Проверять на пересечение с красной линией 
             Vector3d vectorMem = new Vector3d();
             var signMem = 0;
             var pointFromWithOutIntersect = pointFrom;
             Point3d pointToCheck;
+            double[] currentDistances;
             do
             {
                 Vector3d vectorToCheck;
@@ -277,8 +258,23 @@ namespace Networks
                     vectorToCheck *= Delta / vectorToCheck.Length;
                     pointToCheck = pointFromWithOutIntersect + vectorToCheck;
 
+                    currentDistances = _ignoredCurves
+                        .Select(x =>
+                            pointFromWithOutIntersect.DistanceTo(x.GetClosestPointTo(pointFromWithOutIntersect, false)))
+                        .ToArray();
+                    for (int i = 0; i < currentDistances.Length; i++)
+                        currentDistances[i] -= _distancesToIgnoredCurves[i];
+
+                    if (currentDistances.Any(x => x < 0))
+                    {
+                        yield return pointFromWithOutIntersect;
+                        yield break;
+                    }
+
                     continue;
                 }
+
+                yield return pointFromWithOutIntersect;
 
                 var point1 = pointFromWithOutIntersect + vector3d;
                 var point2 = pointFromWithOutIntersect - vector3d;
@@ -309,11 +305,14 @@ namespace Networks
                 vectorToCheck *= Delta / vectorToCheck.Length;
                 pointToCheck = pointFromWithOutIntersect + vectorToCheck;
                 vectorMem = vector3d;
-                yield return pointFromWithOutIntersect;
-            } while (pointFromWithOutIntersect.DistanceTo(curve.GetClosestPointTo(pointFromWithOutIntersect,
-                         false)) < distance ||
-                     pointToCheck.DistanceTo(curve.GetClosestPointTo(pointToCheck,
-                         false)) < distance);
+
+                currentDistances = _ignoredCurves.Select(x =>
+                        pointFromWithOutIntersect.DistanceTo(x.GetClosestPointTo(pointFromWithOutIntersect, false)))
+                    .ToArray();
+                for (int i = 0; i < currentDistances.Length; i++)
+                    currentDistances[i] -= _distancesToIgnoredCurves[i];
+            } while (pointToCheck.DistanceTo(curve.GetClosestPointTo(pointToCheck, false)) < distance
+                     && currentDistances.All(x => x >= 0));
 
             yield return pointFromWithOutIntersect;
         }
@@ -321,19 +320,16 @@ namespace Networks
         private static Point3d GetLastGoodPoint(Point3d pointFrom, Point3d pointTo)
         {
             double[] currentDistances;
-            Vector3d vector3d;
+            Vector3d vector3d = pointTo - pointFrom;
+            vector3d *= Delta / vector3d.Length;
             do
             {
-                vector3d = pointTo - pointFrom;
-                vector3d *= Delta / vector3d.Length;
                 pointFrom += vector3d;
                 currentDistances = _ignoredCurves
                     .Select(x => pointFrom.DistanceTo(x.GetClosestPointTo(pointFrom, false)))
                     .ToArray();
                 for (int i = 0; i < currentDistances.Length; i++)
-                {
                     currentDistances[i] -= _distancesToIgnoredCurves[i];
-                }
             } while (pointFrom.DistanceTo(pointTo) > 2 * Delta
                      && currentDistances.All(x => x > 0));
 
@@ -345,9 +341,8 @@ namespace Networks
 
         private static bool CanIntersect(Entity entity, Point3d pointFrom, Point3d pointTo)
         {
-            //return false;
             var count = entity.IntersectionsCount(new Line(pointFrom, pointTo));
-            return count == 1 || count == 2;
+            return (count == 1 || count == 2) && entity.Layer != Properties.Settings.Default.RedLineLayerName;
         }
 
         public static Pair<Point3d, Point3d> GetStartEndPoints()

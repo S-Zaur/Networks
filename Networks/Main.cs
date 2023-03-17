@@ -95,13 +95,6 @@ namespace Networks
         {
             ACADHelperTemp.ConnectCurves();
         }
-        
-        [Conditional("DEBUG")]
-        [CommandMethod("TempFunc")]
-        public void TempFunc()
-        {
-            ACADHelperTemp.TempFunc();
-        }
     }
     
     public class CommandHandlerButtonNetworks : System.Windows.Input.ICommand

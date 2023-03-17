@@ -44,37 +44,5 @@ namespace Networks
                 tr.Commit();
             }
         }
-
-        public static void TempFunc()
-        {
-            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
-            Database db = acDoc.Database;
-            Editor ed = acDoc.Editor;
-
-            PromptEntityOptions options = new PromptEntityOptions("");
-            options.SetRejectMessage("");
-            options.AddAllowedClass(typeof(Curve), false);
-            PromptEntityResult entSelRes = ed.GetEntity(options);
-            if (entSelRes.Status != PromptStatus.OK)
-                return;
-            ObjectId id = entSelRes.ObjectId;
-
-            entSelRes = ed.GetEntity(options);
-            if (entSelRes.Status != PromptStatus.OK)
-                return;
-            ObjectId id2 = entSelRes.ObjectId;
-            
-            using (DocumentLock _ = acDoc.LockDocument())
-            using (Transaction tr = db.TransactionManager.StartTransaction())
-            {
-                Curve curve = tr.GetObject(id, OpenMode.ForRead) as Curve;
-                Curve curve2 = tr.GetObject(id2, OpenMode.ForRead) as Curve;
-                
-                if (curve is null || curve2 is null) return;
-                
-                ed.WriteMessage($"{curve.IntersectionsCount(curve2)}");
-                tr.Commit();
-            }
-        }
     }
 }
