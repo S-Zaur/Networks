@@ -44,5 +44,29 @@ namespace Networks
                 tr.Commit();
             }
         }
+
+        public static void Size()
+        {
+            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
+            Database db = acDoc.Database;
+            Editor ed = acDoc.Editor;
+
+            PromptEntityOptions options = new PromptEntityOptions("");
+            options.SetRejectMessage("");
+            options.AddAllowedClass(typeof(Polyline), false);
+            PromptEntityResult entSelRes = ed.GetEntity(options);
+            if (entSelRes.Status != PromptStatus.OK)
+                return;
+            ObjectId id = entSelRes.ObjectId;
+            using (DocumentLock _ = acDoc.LockDocument())
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                Polyline curve = tr.GetObject(id, OpenMode.ForRead) as Polyline;
+                var cvs = curve.DoubleOffset(1);
+                tr.Draw(cvs);
+
+                tr.Commit();
+            }
+        }
     }
 }

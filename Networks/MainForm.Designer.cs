@@ -171,6 +171,7 @@
             // StrictModeToolStripMenuItem
             // 
             this.StrictModeToolStripMenuItem.CheckOnClick = true;
+            this.StrictModeToolStripMenuItem.Enabled = false;
             this.StrictModeToolStripMenuItem.Name = "StrictModeToolStripMenuItem";
             this.StrictModeToolStripMenuItem.Size = new System.Drawing.Size(188, 24);
             this.StrictModeToolStripMenuItem.Text = "Строгий режим";

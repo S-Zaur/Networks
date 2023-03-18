@@ -88,12 +88,24 @@ namespace Networks
             MainForm mainForm = new MainForm();
             acad.ShowModelessDialog(mainForm);
         }
+        
+        [CommandMethod("DRAWPIPE")]
+        public void DrawPipe()
+        {
+            AutocadHelper.DrawPipe();
+        }
 
         [Conditional("DEBUG")]
         [CommandMethod("CONNECT")]
         public void ConnectCurves()
         {
             ACADHelperTemp.ConnectCurves();
+        }
+        [Conditional("DEBUG")]
+        [CommandMethod("SIZEOFFSET")]
+        public void Size()
+        {
+            ACADHelperTemp.Size();
         }
     }
     

@@ -15,7 +15,7 @@ namespace Networks
         public int Compare(Polyline x, Polyline y)
         {
             if (x is null || y is null)
-                throw new NullReferenceException();
+                throw new ArgumentNullException();
             return x.Length < y.Length ? -1 : x.Length > y.Length ? 1 : 0;
         }
     }
@@ -31,6 +31,46 @@ namespace Networks
         private static readonly PolylineComparer Comparer = new PolylineComparer();
         private static IReadOnlyList<Curve> _ignoredCurves;
         private static IReadOnlyList<double> _distancesToIgnoredCurves;
+
+        public static void DrawPipe()
+        {
+            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
+            Database db = acDoc.Database;
+            Editor ed = acDoc.Editor;
+             
+            var filterList = new[]
+            {
+                new TypedValue(0, "LWPOLYLINE"),
+            };
+            SelectionFilter filter = new SelectionFilter(filterList);
+            PromptSelectionOptions selectionOptions = new PromptSelectionOptions
+            {
+                MessageForAdding = "Выберите объекты"
+            };
+            PromptSelectionResult selRes = ed.GetSelection(selectionOptions, filter);
+            ObjectId[] objectIds = selRes.Status != PromptStatus.OK
+                ? Array.Empty<ObjectId>()
+                : selRes.Value.GetObjectIds();
+
+            var size = ed.GetDouble("Введите размер").Value;
+            using (DocumentLock _ = acDoc.LockDocument())
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                Polyline[] pipes = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Polyline).ToArray();
+                foreach (var pipe in pipes)
+                {
+                    try
+                    {
+                        tr.Draw(pipe.DoubleOffset(size));
+                    }
+                    catch (Exception)
+                    {
+                        ed.WriteMessage($"Удалось сместить кривую\n");
+                    }
+                }
+                tr.Commit();
+            }
+        }
 
         public static void DrawNetworks(Dictionary<Networks, Pair<Point3d, Point3d>> points, double[] sizes)
         {
@@ -132,8 +172,22 @@ namespace Networks
 
                         newLine.Layer = NetworkManager.GetNetworkName(network);
                         tr.Draw(newLine);
-                        ignores = ignores.Append(newLine).ToArray();
-                        // TODO Добавлять игнорируемые с учетом размеров
+
+                        switch (network)
+                        {
+                            case Networks.WaterPipe:
+                                ignores = ignores.Append(newLine.DoubleOffset(sizes[0])).ToArray();
+                                break;
+                            case Networks.Sewer:
+                                ignores = ignores.Append(newLine.DoubleOffset(sizes[1])).ToArray();
+                                break;
+                            case Networks.HeatingNetworks:
+                                ignores = ignores.Append(newLine.DoubleOffset(sizes[2])).ToArray();
+                                break;
+                            default:
+                                ignores = ignores.Append(newLine).ToArray();
+                                break;
+                        }
                     }
                     catch (Exception)
                     {
@@ -156,7 +210,8 @@ namespace Networks
 
             pointFrom = GetLastGoodPoint(pointFrom, pointTo);
             polyline.AddVertexAt(polyline.NumberOfVertices, pointFrom.Convert2d(new Plane()), 0, 0, 0);
-
+            if (pointFrom == pointTo)
+                return polyline;
             for (int i = 0; i < _ignoredCurves.Count; i++)
             {
                 var curve = _ignoredCurves[i];
@@ -208,7 +263,9 @@ namespace Networks
                 var deltaAngle = MinAngle - angle;
                 deltaAngle = deltaAngle / 180 * Math.PI;
                 vector3d = vector3d.RotateBy(deltaAngle, new Vector3d(0, 0, 1));
-                angle = vector1.GetAngleTo(vector2) / Math.PI * 180;
+                angle = vector3d.GetAngleTo(vector2) / Math.PI * 180;
+                if (angle > 90)
+                    angle = 180 - angle;
                 if (angle < MinAngle)
                     vector3d = vector3d.RotateBy(-2 * deltaAngle, new Vector3d(0, 0, 1));
             }
@@ -342,7 +399,7 @@ namespace Networks
         private static bool CanIntersect(Entity entity, Point3d pointFrom, Point3d pointTo)
         {
             var count = entity.IntersectionsCount(new Line(pointFrom, pointTo));
-            return (count == 1 || count == 2) && entity.Layer != Properties.Settings.Default.RedLineLayerName;
+            return count > 0 && count < 4 && entity.Layer != Properties.Settings.Default.RedLineLayerName;
         }
 
         public static Pair<Point3d, Point3d> GetStartEndPoints()

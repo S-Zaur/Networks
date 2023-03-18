@@ -68,8 +68,6 @@ namespace Networks
             var oldNumberOfVertices = polyline.NumberOfVertices;
             for (int i = 1; i < polyline.NumberOfVertices - 2;)
             {
-                var point = polyline.GetPoint2dAt(i);
-
                 if (polyline.GetPoint3dAt(i - 1) == polyline.GetPoint3dAt(i))
                 {
                     polyline.RemoveVertexAt(i);
@@ -272,6 +270,39 @@ namespace Networks
             if (point == curve.EndPoint)
                 point = curve.GetPointAtDist(curve.GetDistanceAtParameter(curve.EndParam) - 0.0001);
             return curve.GetFirstDerivative(point);
+        }
+
+        public static Polyline DoubleOffset(this Polyline curve, double size)
+        {
+            var offset1 = curve.GetOffsetCurves(size / 2);
+            var offset2 = curve.GetOffsetCurves(-size / 2);
+            Polyline res = null;
+            foreach (DBObject c in offset1)
+            {
+                res = c.Clone() as Polyline;
+            }
+
+            if (res is null) throw new InvalidOperationException();
+            res.SetBulgeAt(res.NumberOfVertices - 1, 0);
+            foreach (DBObject c in offset2)
+            {
+                var pl = c as Polyline;
+                if (pl is null) throw new InvalidOperationException();
+                for (int i = pl.NumberOfVertices - 1; i >= 0; i--)
+                {
+                    res.AddVertexAt(res.NumberOfVertices,
+                        pl.GetPoint2dAt(i),
+                        -pl.GetBulgeAt(Math.Max(i - 1, 0)),
+                        0,
+                        0);
+                }
+            }
+            res.AddVertexAt(res.NumberOfVertices,
+                res.GetPoint2dAt(0),
+                0,
+                0,
+                0);
+            return res;
         }
     }
 }
