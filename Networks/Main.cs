@@ -92,7 +92,7 @@ namespace Networks
         [CommandMethod("DRAWPIPE")]
         public void DrawPipe()
         {
-            AutocadHelper.DrawPipe();
+            AutocadUtilities.DrawPipe();
         }
 
         [Conditional("DEBUG")]

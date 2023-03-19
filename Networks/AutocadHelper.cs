@@ -24,55 +24,15 @@ namespace Networks
     internal static class AutocadHelper
     {
         // Большой TODO Возможность сместить сроящуюся кривую к какой-то другой
-        // ВОПРОС Нужна ли настройка шага? пока оставить так
         private const double Delta = 0.2;
-        private const int MaxDepth = 15;
+        private const int MaxDepth = 10;
         public static int MinAngle { get; set; } = 90;
         private static readonly PolylineComparer Comparer = new PolylineComparer();
         private static IReadOnlyList<Curve> _ignoredCurves;
         private static IReadOnlyList<double> _distancesToIgnoredCurves;
 
-        public static void DrawPipe()
-        {
-            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
-            Database db = acDoc.Database;
-            Editor ed = acDoc.Editor;
-             
-            var filterList = new[]
-            {
-                new TypedValue(0, "LWPOLYLINE"),
-            };
-            SelectionFilter filter = new SelectionFilter(filterList);
-            PromptSelectionOptions selectionOptions = new PromptSelectionOptions
-            {
-                MessageForAdding = "Выберите объекты"
-            };
-            PromptSelectionResult selRes = ed.GetSelection(selectionOptions, filter);
-            ObjectId[] objectIds = selRes.Status != PromptStatus.OK
-                ? Array.Empty<ObjectId>()
-                : selRes.Value.GetObjectIds();
-
-            var size = ed.GetDouble("Введите размер").Value;
-            using (DocumentLock _ = acDoc.LockDocument())
-            using (Transaction tr = db.TransactionManager.StartTransaction())
-            {
-                Polyline[] pipes = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Polyline).ToArray();
-                foreach (var pipe in pipes)
-                {
-                    try
-                    {
-                        tr.Draw(pipe.DoubleOffset(size));
-                    }
-                    catch (Exception)
-                    {
-                        ed.WriteMessage($"Удалось сместить кривую\n");
-                    }
-                }
-                tr.Commit();
-            }
-        }
-
-        public static void DrawNetworks(Dictionary<Networks, Pair<Point3d, Point3d>> points, double[] sizes)
+        public static void DrawNetworks(Dictionary<Networks, Pair<Point3d, Point3d>> points,
+            IReadOnlyList<double> sizes)
         {
             #region Init
 
@@ -112,90 +72,106 @@ namespace Networks
                 Curve[] ignores = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve).ToArray();
                 Curve[] buildingIgnores = objectIdsBuildings.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve)
                     .ToArray();
-
+                _ignoredCurves = ignores.Concat(buildingIgnores).ToArray();
                 foreach (var pair in points)
                 {
                     var network = pair.Key;
-                    var currentIgnores = ignores.Select(x => x).ToArray();
-                    double[] distanceToIgnores = ignores.Select(x => NetworkManager.GetDistance(network,
-                        NetworkManager.GetType(x.Layer))).ToArray();
+                    _distancesToIgnoredCurves = _ignoredCurves.Select(x => NetworkManager.GetDistance(network,
+                        NetworkManager.GetUniversalType(x.Layer))).ToArray();
+                    AddSizes(network, sizes);
 
-                    double[] distanceToBuildingIgnores = buildingIgnores.Select(x =>
-                        NetworkManager.GetDistanceToBuilding(network,
-                            NetworkManager.GetBuildingType(x.Layer))).ToArray();
-
-                    currentIgnores = currentIgnores.Concat(buildingIgnores).ToArray();
-                    distanceToIgnores = distanceToIgnores.Concat(distanceToBuildingIgnores).ToArray();
-
-                    switch (network)
-                    {
-                        case Networks.WaterPipe:
-                            distanceToIgnores = distanceToIgnores.Select(x => x + sizes[0] / 2).ToArray();
-                            break;
-                        case Networks.Sewer:
-                            distanceToIgnores = distanceToIgnores.Select(x => x + sizes[1] / 2).ToArray();
-                            break;
-                        case Networks.HeatingNetworks:
-                            distanceToIgnores = distanceToIgnores.Select(x => x + sizes[2] / 2).ToArray();
-                            break;
-                    }
-
-                    var ignoresCount = Properties.Settings.Default.AllowIntersection ? 0 : ignores.Length;
-
-                    for (int j = 0; j < 0; j++)
-                    {
-                        for (int k = j + 1; k < ignoresCount; k++)
-                        {
-                            var ignoreA = ignores[j];
-                            var ignoreB = ignores[k];
-                            var distanceBetween = ignoreA.GetMinDistanceToCurve(ignoreB);
-                            var distanceA = distanceToIgnores[j];
-                            var distanceB = distanceToIgnores[k];
-                            if (distanceA + distanceB <= distanceBetween)
-                                continue;
-
-                            Polyline additionalPolyline = ignoreA.Join(ignoreB);
-                            currentIgnores = currentIgnores.Append(additionalPolyline).ToArray();
-                            distanceToIgnores = distanceToIgnores.Append(Math.Min(distanceA, distanceB)).ToArray();
-                        }
-                    }
-
-                    try
-                    {
-                        _ignoredCurves = currentIgnores;
-                        _distancesToIgnoredCurves = distanceToIgnores;
-                        var newLine = ConnectPoints(pair.Value.First, pair.Value.Second, 1);
-
-                        //while (newLine.Simplify(ignores.Union(buildingIgnores).ToArray(), distanceToIgnores) != 0)
-                        {
-                        }
-
-                        newLine.Layer = NetworkManager.GetNetworkName(network);
-                        tr.Draw(newLine);
-
-                        switch (network)
-                        {
-                            case Networks.WaterPipe:
-                                ignores = ignores.Append(newLine.DoubleOffset(sizes[0])).ToArray();
-                                break;
-                            case Networks.Sewer:
-                                ignores = ignores.Append(newLine.DoubleOffset(sizes[1])).ToArray();
-                                break;
-                            case Networks.HeatingNetworks:
-                                ignores = ignores.Append(newLine.DoubleOffset(sizes[2])).ToArray();
-                                break;
-                            default:
-                                ignores = ignores.Append(newLine).ToArray();
-                                break;
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        ed.WriteMessage($"Не удалось проложить сеть {NetworkManager.GetNetworkName(network)}\n");
-                    }
+                    if (!Properties.Settings.Default.AllowIntersection)
+                        AddAdditionalPolylines();
+                    tr.DrawNetwork(pair, sizes);
                 }
 
                 tr.Commit();
+            }
+        }
+
+        private static void DrawNetwork(this Transaction tr, KeyValuePair<Networks, Pair<Point3d, Point3d>> points,
+            IReadOnlyList<double> sizes)
+        {
+            Networks network = points.Key;
+            try
+            {
+                var newLine = ConnectPoints(points.Value.First, points.Value.Second, 1);
+                while (newLine.Simplify(_ignoredCurves, _distancesToIgnoredCurves) != 0)
+                {
+                }
+
+                newLine.Layer = NetworkManager.GetNetworkName(network);
+                tr.Draw(newLine);
+
+                switch (network)
+                {
+                    case Networks.WaterPipe:
+                        _ignoredCurves = _ignoredCurves.Append(newLine.DoubleOffset(sizes[0])).ToArray();
+                        break;
+                    case Networks.Sewer:
+                        _ignoredCurves = _ignoredCurves.Append(newLine.DoubleOffset(sizes[1])).ToArray();
+                        break;
+                    case Networks.HeatingNetworks:
+                        _ignoredCurves = _ignoredCurves.Append(newLine.DoubleOffset(sizes[2])).ToArray();
+                        break;
+                    default:
+                        _ignoredCurves = _ignoredCurves.Append(newLine).ToArray();
+                        break;
+                }
+            }
+            catch (Exception)
+            {
+                Autocad.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
+                    $"Не удалось проложить сеть {NetworkManager.GetNetworkName(network)}\n");
+            }
+        }
+
+        private static void AddSizes(Networks network, IReadOnlyList<double> sizes)
+        {
+            double size = 0;
+            switch (network)
+            {
+                case Networks.WaterPipe:
+                    size = sizes[0] / 2;
+                    break;
+                case Networks.Sewer:
+                    size = sizes[1] / 2;
+                    break;
+                case Networks.HeatingNetworks:
+                    size = sizes[2] / 2;
+                    break;
+                case Networks.PowerCable:
+                case Networks.CommunicationCable:
+                case Networks.GasPipe:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(network), network, null);
+            }
+
+            _distancesToIgnoredCurves = _distancesToIgnoredCurves.Select(x => x + size).ToArray();
+        }
+
+        private static void AddAdditionalPolylines()
+        {
+            var ignoresCount = _ignoredCurves.Count;
+
+            for (int j = 0; j < ignoresCount; j++)
+            {
+                for (int k = j + 1; k < ignoresCount; k++)
+                {
+                    var ignoreA = _ignoredCurves[j];
+                    var ignoreB = _ignoredCurves[k];
+                    var distanceBetween = ignoreA.GetMinDistanceToCurve(ignoreB);
+                    var distanceA = _distancesToIgnoredCurves[j];
+                    var distanceB = _distancesToIgnoredCurves[k];
+                    if (distanceA + distanceB <= distanceBetween)
+                        continue;
+
+                    Polyline additionalPolyline = ignoreA.Join(ignoreB);
+                    _ignoredCurves = _ignoredCurves.Append(additionalPolyline).ToArray();
+                    _distancesToIgnoredCurves =
+                        _distancesToIgnoredCurves.Append(Math.Min(distanceA, distanceB)).ToArray();
+                }
             }
         }
 
@@ -221,6 +197,8 @@ namespace Networks
 
                 var pointsWithOutIntersect =
                     GetPointWithOutIntersect(pointFrom, pointTo, curve, distance).ToArray();
+                pointsWithOutIntersect = pointsWithOutIntersect
+                    .Where(x => !double.IsNaN(x.X) && !double.IsNaN(x.Y) && !double.IsNaN(x.Z)).ToArray();
                 if (pointsWithOutIntersect.Length == 0) return null;
 
                 List<Polyline> variants = new List<Polyline>();
@@ -228,7 +206,7 @@ namespace Networks
                 foreach (var point in pointsWithOutIntersect)
                 {
                     polyline.AddVertexAt(polyline.NumberOfVertices, point.Convert2d(new Plane()), 0, 0, 0);
-                    if (!CanIntersect(curve, point, pointTo))
+                    if (!CanIntersect(curve, point, pointTo) && !Properties.Settings.Default.AllowIntersection)
                         continue;
                     var pointFromWithIntersect = GetPointWithIntersect(point, pointTo, curve, distance);
                     variants.Add(polyline.Join(ConnectPoints(pointFromWithIntersect, pointTo, depth + 1)));
@@ -249,6 +227,7 @@ namespace Networks
 
         private static Point3d GetPointWithIntersect(Point3d pointFrom, Point3d pointTo, Curve curve, double distance)
         {
+            // TODO поработать с названиями переменных
             var pointFromWithIntersect = pointFrom;
             var vector1 = pointTo - pointFromWithIntersect;
             var point = curve.GetClosestPointTo(pointFromWithIntersect, false);
@@ -258,15 +237,15 @@ namespace Networks
                 angle = 180 - angle;
             var vector3d = pointTo - pointFromWithIntersect;
             vector3d *= Delta / vector3d.Length;
-            if (angle < MinAngle)
+            if (angle < MinAngle - 0.01)
             {
                 var deltaAngle = MinAngle - angle;
                 deltaAngle = deltaAngle / 180 * Math.PI;
                 vector3d = vector3d.RotateBy(deltaAngle, new Vector3d(0, 0, 1));
                 angle = vector3d.GetAngleTo(vector2) / Math.PI * 180;
-                if (angle > 90)
+                if (angle - 0.01 > 90)
                     angle = 180 - angle;
-                if (angle < MinAngle)
+                if (angle < MinAngle - 0.01)
                     vector3d = vector3d.RotateBy(-2 * deltaAngle, new Vector3d(0, 0, 1));
             }
 
@@ -285,6 +264,7 @@ namespace Networks
         {
             // TODO Можно поробовать идти в обе стороны
             // TODO Проверять на пересечение с красной линией 
+            // TODO Упростить
             Vector3d vectorMem = new Vector3d();
             var signMem = 0;
             var pointFromWithOutIntersect = pointFrom;
@@ -399,7 +379,7 @@ namespace Networks
         private static bool CanIntersect(Entity entity, Point3d pointFrom, Point3d pointTo)
         {
             var count = entity.IntersectionsCount(new Line(pointFrom, pointTo));
-            return count > 0 && count < 4 && entity.Layer != Properties.Settings.Default.RedLineLayerName;
+            return count > 0 && count < 5 && entity.Layer != Properties.Settings.Default.RedLineLayerName;
         }
 
         public static Pair<Point3d, Point3d> GetStartEndPoints()

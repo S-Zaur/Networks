@@ -68,6 +68,14 @@ namespace Networks
 
         private static readonly Dictionary<string, Buildings> BuildingsMap = new Dictionary<string, Buildings>();
         
+        public static double GetDistance(Networks first, object second)
+        {
+            if (second is Networks sc)
+                return GetDistance(first, sc);
+            if (second is Buildings bd)
+                return GetDistanceToBuilding(first, bd);
+            throw new ArgumentException();
+        }
         public static double GetDistance(Networks firstNetwork, Networks secondNetwork)
         {
             if (firstNetwork == Networks.GasPipe)
@@ -153,6 +161,15 @@ namespace Networks
         {
             if (NetworksMap.ContainsKey(typeName))
                 return NetworksMap[typeName];
+            throw new Exception($"Ошибка слоя: {typeName}");
+        }
+
+        public static object GetUniversalType(string typeName)
+        {
+            if (NetworksMap.ContainsKey(typeName))
+                return NetworksMap[typeName];
+            if (BuildingsMap.ContainsKey(typeName))
+                return BuildingsMap[typeName];
             throw new Exception($"Ошибка слоя: {typeName}");
         }
 

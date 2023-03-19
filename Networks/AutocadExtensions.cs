@@ -3,6 +3,7 @@ using Autodesk.AutoCAD.Geometry;
 using Autocad = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Linq;
 using System;
+using System.Collections.Generic;
 
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -61,7 +62,7 @@ namespace Networks
             }
         }
 
-        public static int Simplify(this Polyline polyline, Curve[] curves, double[] distances)
+        public static int Simplify(this Polyline polyline, IReadOnlyList<Curve> curves, IReadOnlyList<double> distances)
         {
             if (polyline.NumberOfVertices <= 2)
                 return 0;
@@ -76,7 +77,7 @@ namespace Networks
 
                 var line = new Line(polyline.GetPoint3dAt(i - 1), polyline.GetPoint3dAt(i + 1));
                 var flag = true;
-                for (int j = 0; j < curves.Length; j++)
+                for (int j = 0; j < curves.Count; j++)
                 {
                     var curve = curves[j];
                     var distanceByTable = distances[j];

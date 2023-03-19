@@ -130,8 +130,7 @@ namespace Networks
 
         private void StrictModeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // ВОПРОС Нужна ли настройка строго режима? Оставить строгий режим
-            Properties.Settings.Default.AllowIntersection = StrictModeToolStripMenuItem.Checked;
+            Properties.Settings.Default.AllowIntersection = !StrictModeToolStripMenuItem.Checked;
             Properties.Settings.Default.Save();
         }
 

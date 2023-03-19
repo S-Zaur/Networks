@@ -5,15 +5,13 @@ using Autocad = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Linq;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Autodesk.AutoCAD.EditorInput;
 
 namespace Networks
 {
     [SuppressMessage("ReSharper", "AccessToStaticMemberViaDerivedType")]
     public static class AutocadUtilities
     {
-        /// <summary>
-        /// Получение названий всех слоев документа
-        /// </summary>
         public static string[] GetAllLayers()
         {
             Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
@@ -36,10 +34,7 @@ namespace Networks
 
             return layers.ToArray();
         }
-
-        /// <summary>
-        /// Проверка наличия и создание необходимых слоев на чертеже
-        /// </summary>
+        
         public static void CheckLayers()
         {
             string[] layers = GetAllLayers();
@@ -80,6 +75,46 @@ namespace Networks
                     tr.AddNewlyCreatedDBObject(acLyrTblRec, true);
                 }
 
+                tr.Commit();
+            }
+        }
+        
+        public static void DrawPipe()
+        {
+            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
+            Database db = acDoc.Database;
+            Editor ed = acDoc.Editor;
+             
+            var filterList = new[]
+            {
+                new TypedValue(0, "LWPOLYLINE"),
+            };
+            SelectionFilter filter = new SelectionFilter(filterList);
+            PromptSelectionOptions selectionOptions = new PromptSelectionOptions
+            {
+                MessageForAdding = "Выберите объекты"
+            };
+            PromptSelectionResult selRes = ed.GetSelection(selectionOptions, filter);
+            ObjectId[] objectIds = selRes.Status != PromptStatus.OK
+                ? Array.Empty<ObjectId>()
+                : selRes.Value.GetObjectIds();
+
+            var size = ed.GetDouble("Введите размер (мм)").Value / 1000;
+            using (DocumentLock _ = acDoc.LockDocument())
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                Polyline[] pipes = objectIds.Select(x => tr.GetObject(x, OpenMode.ForRead) as Polyline).ToArray();
+                foreach (var pipe in pipes)
+                {
+                    try
+                    {
+                        tr.Draw(pipe.DoubleOffset(size));
+                    }
+                    catch (Exception)
+                    {
+                        ed.WriteMessage($"Удалось сместить кривую\n");
+                    }
+                }
                 tr.Commit();
             }
         }
