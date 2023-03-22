@@ -90,7 +90,7 @@ namespace Networks
             try
             {
                 WindowState = FormWindowState.Minimized;
-                var points = AutocadHelper.GetStartEndPoints();
+                var points = AutocadUtilities.GetStartEndPoints();
                 _points.Add((Networks)checkBox.Tag, points);
             }
             catch

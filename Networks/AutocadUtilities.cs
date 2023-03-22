@@ -6,11 +6,12 @@ using System.Linq;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
 
 namespace Networks
 {
     [SuppressMessage("ReSharper", "AccessToStaticMemberViaDerivedType")]
-    public static class AutocadUtilities
+    internal static class AutocadUtilities
     {
         public static string[] GetAllLayers()
         {
@@ -117,6 +118,26 @@ namespace Networks
                 }
                 tr.Commit();
             }
+        }
+        
+        public static Pair<Point3d, Point3d> GetStartEndPoints()
+        {
+            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
+            Editor ed = acDoc.Editor;
+
+            PromptPointOptions optPoint = new PromptPointOptions($"Выберите первую точку\n");
+            PromptPointResult pointSelRes = ed.GetPoint(optPoint);
+            if (pointSelRes.Status != PromptStatus.OK)
+                throw new Exception("Точка не выбрана");
+            Point3d point1 = pointSelRes.Value;
+
+            optPoint = new PromptPointOptions($"Выберите вторую точку\n");
+            pointSelRes = ed.GetPoint(optPoint);
+            if (pointSelRes.Status != PromptStatus.OK)
+                throw new Exception("Точка не выбрана");
+            Point3d point2 = pointSelRes.Value;
+
+            return new Pair<Point3d, Point3d>(point1, point2);
         }
     }
 }

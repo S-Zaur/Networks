@@ -4,11 +4,14 @@ using Autocad = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using Exception = Autodesk.AutoCAD.Runtime.Exception;
 
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Networks
 {
+    [SuppressMessage("ReSharper", "AccessToStaticMemberViaDerivedType")]
     internal static class AutocadExtensions
     {
         public static double GetMinDistanceToCurve(this Curve firstCurve, Curve secondCurve)
@@ -36,7 +39,7 @@ namespace Networks
                 acBlkTblRec.AppendEntity(entity);
                 transaction.AddNewlyCreatedDBObject(entity, true);
             }
-            catch
+            catch (Exception)
             {
             }
         }
@@ -215,44 +218,6 @@ namespace Networks
             result.AddVertexAt(1, firstLine.EndPoint.Convert2d(new Plane()), 0, 0, 0);
             result.AddVertexAt(2, secondLine.StartPoint.Convert2d(new Plane()), 0, 0, 0);
             result.AddVertexAt(3, secondLine.EndPoint.Convert2d(new Plane()), 0, 0, 0);
-
-            return result;
-        }
-
-        public static Polyline TryJoin(this Polyline polyline, Polyline first, Polyline second)
-        {
-            if (first is null && second is null)
-                return null;
-            if (first is null)
-                polyline = polyline.Join(second);
-            else if (second is null)
-                polyline = polyline.Join(first);
-            else
-                polyline = polyline.Join(first.Length < second.Length ? first : second);
-
-            return polyline;
-        }
-
-        public static Polyline ToPolyline(this Vector3d vector, Point3d cs)
-        {
-            var result = new Polyline();
-            result.AddVertexAt(0, cs.Convert2d(new Plane()), 0, 0, 0);
-            cs += vector;
-            result.AddVertexAt(1, cs.Convert2d(new Plane()), 0, 0, 0);
-            vector *= 0.2;
-            vector = vector.RotateBy(Math.PI * 3 / 4, new Vector3d(0, 0, 1));
-            cs += vector;
-            result.AddVertexAt(2, cs.Convert2d(new Plane()), 0, 0, 0);
-
-            vector = vector.RotateBy(Math.PI * 3 / 4, new Vector3d(0, 0, 1));
-            vector *= Math.Sqrt(2);
-            cs += vector;
-            result.AddVertexAt(3, cs.Convert2d(new Plane()), 0, 0, 0);
-
-            vector = vector.RotateBy(Math.PI * 3 / 4, new Vector3d(0, 0, 1));
-            vector /= Math.Sqrt(2);
-            cs += vector;
-            result.AddVertexAt(4, cs.Convert2d(new Plane()), 0, 0, 0);
 
             return result;
         }
