@@ -7,6 +7,7 @@ using Autocad = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Linq;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Autodesk.AutoCAD.Colors;
 
 namespace Networks
 {
@@ -25,7 +26,7 @@ namespace Networks
     {
         // Большой TODO Возможность сместить сроящуюся кривую к какой-то другой
         private const double Delta = 0.2;
-        private const int MaxDepth = 10;
+        private static int MaxDepth = 10;
 
         private static double _minAngle = Math.PI / 2;
         public static double MinAngle
@@ -223,7 +224,7 @@ namespace Networks
             {
                 var curve = _ignoredCurves[i];
                 var distance = _distancesToIgnoredCurves[i];
-                if (pointFrom.DistanceTo(curve.GetClosestPointTo(pointFrom, false)) >= distance + Delta)
+                if (pointFrom.DistanceTo(curve.GetClosestPointTo(pointFrom, false)) >= distance)
                     continue;
 
                 var bypassedPoints = BypassCurve(pointFrom, pointTo, curve, distance).ToArray();
@@ -365,6 +366,8 @@ namespace Networks
 
         private static Point3d GetLastGoodPoint(Point3d pointFrom, Point3d pointTo)
         {
+            if (!CheckAllDistances(pointFrom))
+                return pointFrom;
             Vector3d vector3d = pointTo - pointFrom;
             vector3d *= Delta / vector3d.Length;
             do
@@ -374,7 +377,6 @@ namespace Networks
 
             if (pointFrom.DistanceTo(pointTo) < 2 * Delta)
                 return pointTo;
-            pointFrom -= vector3d;
             return pointFrom;
         }
 
