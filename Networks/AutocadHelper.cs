@@ -7,7 +7,6 @@ using Autocad = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Linq;
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Autodesk.AutoCAD.Colors;
 
 namespace Networks
 {
@@ -26,7 +25,7 @@ namespace Networks
     {
         // Большой TODO Возможность сместить сроящуюся кривую к какой-то другой
         private const double Delta = 0.2;
-        private static int MaxDepth = 10;
+        private const int MaxDepth = 15;
 
         private static double _minAngle = Math.PI / 2;
         public static double MinAngle
@@ -38,6 +37,7 @@ namespace Networks
         private static readonly PolylineComparer Comparer = new PolylineComparer();
         private static IReadOnlyList<Curve> _ignoredCurves;
         private static IReadOnlyList<double> _distancesToIgnoredCurves;
+        private static IReadOnlyList<Curve> _redLines;
 
         private static double _bestDistance;
         private static Polyline _bestPolyline;
@@ -85,6 +85,8 @@ namespace Networks
                 Curve[] buildingIgnores = objectIdsBuildings.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve)
                     .ToArray();
                 _ignoredCurves = ignores.Concat(buildingIgnores).ToArray();
+                _redLines = buildingIgnores.Where(x => x.Layer == Properties.Settings.Default.RedLineLayerName)
+                    .ToArray();
                 foreach (var pair in points)
                 {
                     var network = pair.Key;
@@ -240,6 +242,8 @@ namespace Networks
                     if (!CanIntersect(curve, point, pointTo) && !Properties.Settings.Default.AllowIntersection)
                         continue;
                     var pointFromWithIntersect = IntersectCurve(point, pointTo, curve, distance);
+                    if (IntersectRedLines(point,pointFromWithIntersect))
+                        continue;
                     variants.Add(polyline.Join(ConnectPoints(pointFromWithIntersect, pointTo, depth + 1)));
                 }
 
@@ -336,6 +340,12 @@ namespace Networks
             vectorToCheck *= Delta / vectorToCheck.Length;
             var pointToCheck = pointFrom + vectorToCheck;
             return pointToCheck.DistanceTo(curve.GetClosestPointTo(pointToCheck, false)) > distance;
+        }
+
+        private static bool IntersectRedLines(Point3d firstPoint,Point3d secondPoint)
+        {
+            Line line = new Line(firstPoint, secondPoint);
+            return _redLines.Any(x => line.IntersectionsCount(x) > 0);
         }
 
         private static Point3d MovePointAway(Point3d point, Curve curve, double distance)
