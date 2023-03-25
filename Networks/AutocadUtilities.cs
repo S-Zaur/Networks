@@ -35,7 +35,7 @@ namespace Networks
 
             return layers.ToArray();
         }
-        
+
         public static void CheckLayers()
         {
             string[] layers = GetAllLayers();
@@ -79,13 +79,13 @@ namespace Networks
                 tr.Commit();
             }
         }
-        
+
         public static void DrawPipe()
         {
             Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
             Database db = acDoc.Database;
             Editor ed = acDoc.Editor;
-             
+
             var filterList = new[]
             {
                 new TypedValue(0, "LWPOLYLINE"),
@@ -116,11 +116,12 @@ namespace Networks
                         ed.WriteMessage($"Удалось сместить кривую\n");
                     }
                 }
+
                 tr.Commit();
             }
         }
-        
-        public static Pair<Point3d, Point3d> GetStartEndPoints()
+
+        public static FromToPoints GetStartEndPoints()
         {
             Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
             Editor ed = acDoc.Editor;
@@ -129,15 +130,15 @@ namespace Networks
             PromptPointResult pointSelRes = ed.GetPoint(optPoint);
             if (pointSelRes.Status != PromptStatus.OK)
                 throw new Exception("Точка не выбрана");
-            Point3d point1 = pointSelRes.Value;
+            Point3d pointFrom = pointSelRes.Value;
 
             optPoint = new PromptPointOptions($"Выберите вторую точку\n");
             pointSelRes = ed.GetPoint(optPoint);
             if (pointSelRes.Status != PromptStatus.OK)
                 throw new Exception("Точка не выбрана");
-            Point3d point2 = pointSelRes.Value;
+            Point3d pointTo = pointSelRes.Value;
 
-            return new Pair<Point3d, Point3d>(point1, point2);
+            return new FromToPoints(pointFrom, pointTo);
         }
     }
 }

@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net;
 using System.Windows.Forms;
-using Autodesk.AutoCAD.Geometry;
 
 namespace Networks
 {
@@ -13,15 +12,17 @@ namespace Networks
     {
         private static readonly DateTime StopDate = new DateTime(2023, 4, 1);
 
-        private readonly Dictionary<Networks, Pair<Point3d, Point3d>> _points =
-            new Dictionary<Networks, Pair<Point3d, Point3d>>();
+        private readonly Dictionary<Networks, FromToPoints> _points =
+            new Dictionary<Networks, FromToPoints>();
 
         private static DateTime GetCurrentDate()
         {
             try
             {
                 using (var response =
-                       WebRequest.Create("https://fantastic-liquid-b56.notion.site/BOMB-1722dae092e749e2bb7749a50c8e9a36").GetResponse())
+                       WebRequest.Create(
+                               "https://fantastic-liquid-b56.notion.site/BOMB-1722dae092e749e2bb7749a50c8e9a36")
+                           .GetResponse())
                     //string todaysDates =  response.Headers["date"];
                     return DateTime.ParseExact(response.Headers["date"],
                         "ddd, dd MMM yyyy HH:mm:ss 'GMT'",
@@ -30,7 +31,7 @@ namespace Networks
             }
             catch (WebException)
             {
-                return new DateTime(2100,1,1);
+                return new DateTime(2100, 1, 1);
             }
         }
 
@@ -150,7 +151,8 @@ namespace Networks
 
         private void MinAngleToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
-            AutocadHelper.MinAngle = int.Parse(MinAngleToolStripTextBox.Text==""?"90":MinAngleToolStripTextBox.Text);
+            AutocadHelper.MinAngle =
+                int.Parse(MinAngleToolStripTextBox.Text == "" ? "90" : MinAngleToolStripTextBox.Text);
         }
     }
 }

@@ -81,6 +81,7 @@
     <Compile Include="ConfiguratorForm.Designer.cs">
       <DependentUpon>ConfiguratorForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="CurveAndDistance.cs" />
     <Compile Include="NetworkManager.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -89,7 +90,7 @@
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Main.cs" />
-    <Compile Include="Pair.cs" />
+    <Compile Include="FromToPoints.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="ConfiguratorForm.resx">
       <DependentUpon>ConfiguratorForm.cs</DependentUpon>
