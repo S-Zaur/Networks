@@ -131,8 +131,7 @@ namespace Networks
 
         private void StrictModeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Properties.Settings.Default.AllowIntersection = !StrictModeToolStripMenuItem.Checked;
-            Properties.Settings.Default.Save();
+            AutocadHelper.AllowIntersection = !StrictModeToolStripMenuItem.Checked;
         }
 
         private void MinAngleToolStripTextBox_KeyPress(object sender, KeyPressEventArgs e)

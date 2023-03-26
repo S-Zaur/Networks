@@ -96,18 +96,6 @@ namespace Networks.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool AllowIntersection {
-            get {
-                return ((bool)(this["AllowIntersection"]));
-            }
-            set {
-                this["AllowIntersection"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("Газопроводы")]
         public string GasPipeLayerName {
             get {

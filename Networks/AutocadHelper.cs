@@ -34,7 +34,7 @@ namespace Networks
             get => _minAngle;
             set => _minAngle = value / 180 * Math.PI;
         }
-
+        public static bool AllowIntersection { get; set; }
         private static readonly PolylineComparer Comparer = new PolylineComparer();
         private static IReadOnlyList<Curve> _ignoredCurves;
         private static IReadOnlyList<double> _distancesToIgnoredCurves;
@@ -98,7 +98,7 @@ namespace Networks
                         NetworkManager.GetUniversalType(x.Layer))).ToArray();
                     AddSizes(network);
 
-                    if (!Properties.Settings.Default.AllowIntersection)
+                    if (!AllowIntersection)
                         AddAdditionalPolylines();
                     tr.DrawNetwork(pair);
                 }
@@ -106,44 +106,7 @@ namespace Networks
                 tr.Commit();
             }
         }
-
-        private static void DrawNetwork(this Transaction tr, KeyValuePair<Networks, FromToPoints> points)
-        {
-            Networks network = points.Key;
-            try
-            {
-                _startPoint = points.Value.From;
-                _bestPolyline = null;
-                _bestDistance = points.Value.From.DistanceTo(points.Value.To);
-                var newLine = ConnectPoints(points.Value, 1);
-                while (newLine.Simplify(_ignoredCurves, _distancesToIgnoredCurves) != 0)
-                {
-                }
-
-                newLine.Layer = NetworkManager.GetNetworkName(network);
-                tr.Draw(newLine);
-                AddPolylineToIgnores(newLine);
-            }
-            catch (Exception)
-            {
-                if (_bestPolyline is object)
-                {
-                    while (_bestPolyline.Simplify(_ignoredCurves, _distancesToIgnoredCurves) != 0)
-                    {
-                    }
-
-                    _bestPolyline.Layer = NetworkManager.GetNetworkName(network);
-                    tr.Draw(_bestPolyline);
-                    AddPolylineToIgnores(_bestPolyline);
-                    Autocad.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
-                        $"Не удалось проложить сеть {NetworkManager.GetNetworkName(network)}. Проложен один из наиболее удачных вариантов\n");
-                }
-                else
-                    Autocad.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
-                        $"Не удалось проложить сеть {NetworkManager.GetNetworkName(network)}\n");
-            }
-        }
-
+        
         private static void AddSizes(Networks network)
         {
             double size = 0;
@@ -193,6 +156,43 @@ namespace Networks
             }
         }
 
+        private static void DrawNetwork(this Transaction tr, KeyValuePair<Networks, FromToPoints> points)
+        {
+            Networks network = points.Key;
+            try
+            {
+                _startPoint = points.Value.From;
+                _bestPolyline = null;
+                _bestDistance = points.Value.From.DistanceTo(points.Value.To);
+                var newLine = ConnectPoints(points.Value, 1);
+                while (newLine.Simplify(_ignoredCurves, _distancesToIgnoredCurves) != 0)
+                {
+                }
+
+                newLine.Layer = NetworkManager.GetNetworkName(network);
+                tr.Draw(newLine);
+                AddPolylineToIgnores(newLine);
+            }
+            catch (Exception)
+            {
+                if (_bestPolyline is object)
+                {
+                    while (_bestPolyline.Simplify(_ignoredCurves, _distancesToIgnoredCurves) != 0)
+                    {
+                    }
+
+                    _bestPolyline.Layer = NetworkManager.GetNetworkName(network);
+                    tr.Draw(_bestPolyline);
+                    AddPolylineToIgnores(_bestPolyline);
+                    Autocad.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
+                        $"Не удалось проложить сеть {NetworkManager.GetNetworkName(network)}. Проложен один из наиболее удачных вариантов\n");
+                }
+                else
+                    Autocad.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
+                        $"Не удалось проложить сеть {NetworkManager.GetNetworkName(network)}\n");
+            }
+        }
+        
         private static void AddPolylineToIgnores(Polyline polyline)
         {
             var network = NetworkManager.GetType(polyline.Layer);
@@ -207,15 +207,18 @@ namespace Networks
                 case Networks.HeatingNetworks:
                     _ignoredCurves = _ignoredCurves.Append(polyline.DoubleOffset(_pipeSizes[2])).ToArray();
                     break;
-                default:
+                case Networks.PowerCable:
+                case Networks.CommunicationCable:
+                case Networks.GasPipe:
                     _ignoredCurves = _ignoredCurves.Append(polyline).ToArray();
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(network), network, null);
             }
         }
 
         private static Polyline ConnectPoints(FromToPoints points, int depth)
         {
-            // TODO Оптимизация работы если конечная точка на кривой
             if (depth > MaxDepth)
                 return null;
             Polyline polyline = new Polyline();
@@ -243,7 +246,7 @@ namespace Networks
                 {
                     polyline.AddVertexAt(polyline.NumberOfVertices, point.Convert2d(new Plane()), 0, 0, 0);
                     if (!CanIntersect(curve, new FromToPoints(point, points.To)) &&
-                        !Properties.Settings.Default.AllowIntersection)
+                        !AllowIntersection)
                         continue;
                     var pointFromWithIntersect = IntersectCurve(new FromToPoints(point, points.To),
                         new CurveAndDistance(curve, distance));
@@ -268,38 +271,24 @@ namespace Networks
             return polyline;
         }
 
-        private static Point3d IntersectCurve(FromToPoints points, CurveAndDistance curveAndDistance)
+        private static Point3d GetLastGoodPoint(FromToPoints points)
         {
-            var vector = points.To - points.From;
-            var derivative = curveAndDistance.Curve.GetFirstDerivative(
-                curveAndDistance.Curve.GetClosestPointTo(points.From, false),
-                true
-            );
-            var angle = vector.GetAngleTo(derivative);
-            angle = Math.Min(angle, Math.PI - angle);
-            vector *= Delta / vector.Length;
-            if (angle < MinAngle - 0.01)
-            {
-                var deltaAngle = MinAngle - angle;
-                vector = vector.RotateBy(deltaAngle, new Vector3d(0, 0, 1));
-                angle = vector.GetAngleTo(derivative);
-                angle = Math.Min(angle, Math.PI - angle);
-                if (angle < MinAngle - 0.01)
-                    vector = vector.RotateBy(-2 * deltaAngle, new Vector3d(0, 0, 1));
-            }
-
+            if (!CheckAllDistances(points.From))
+                return points.From;
+            Vector3d vector3d = points.To - points.From;
+            vector3d *= Delta / vector3d.Length;
             do
             {
-                points.From += vector;
-            } while (points.From.DistanceTo(curveAndDistance.Curve.GetClosestPointTo(points.From, false)) <
-                     curveAndDistance.Distance);
+                points.From += vector3d;
+            } while (points.From.DistanceTo(points.To) > 2 * Delta && CheckAllDistances(points.From));
 
+            if (points.From.DistanceTo(points.To) < 2 * Delta)
+                return points.To;
             return points.From;
         }
-
+        
         private static IEnumerable<Point3d> BypassCurve(FromToPoints points, CurveAndDistance curveAndDistance)
         {
-            // TODO Можно поробовать идти в обе стороны
             Vector3d prevVector = new Vector3d();
             int prevSign = 0;
             do
@@ -330,6 +319,47 @@ namespace Networks
             yield return points.From;
         }
 
+        private static Point3d IntersectCurve(FromToPoints points, CurveAndDistance curveAndDistance)
+        {
+            var vector = points.To - points.From;
+            var derivative = curveAndDistance.Curve.GetFirstDerivative(
+                curveAndDistance.Curve.GetClosestPointTo(points.From, false),
+                true
+            );
+            var angle = vector.GetAngleTo(derivative);
+            angle = Math.Min(angle, Math.PI - angle);
+            vector *= Delta / vector.Length;
+            if (angle < MinAngle - 0.01)
+            {
+                var deltaAngle = MinAngle - angle;
+                vector = vector.RotateBy(deltaAngle, new Vector3d(0, 0, 1));
+                angle = vector.GetAngleTo(derivative);
+                angle = Math.Min(angle, Math.PI - angle);
+                if (angle < MinAngle - 0.01)
+                    vector = vector.RotateBy(-2 * deltaAngle, new Vector3d(0, 0, 1));
+            }
+
+            do
+            {
+                points.From += vector;
+            } while (points.From.DistanceTo(curveAndDistance.Curve.GetClosestPointTo(points.From, false)) <
+                     curveAndDistance.Distance);
+
+            return points.From;
+        }
+        
+        private static bool CanIntersect(Entity entity, FromToPoints points)
+        {
+            var count = entity.IntersectionsCount(new Line(points.From, points.To));
+            return count > 0 && count < 5 && entity.Layer != Properties.Settings.Default.RedLineLayerName;
+        }
+        
+        private static bool IntersectRedLines(FromToPoints points)
+        {
+            Line line = new Line(points.From, points.To);
+            return _redLines.Any(x => line.IntersectionsCount(x) > 0);
+        }
+
         private static bool CheckAllDistances(Point3d point)
         {
             var currentDistances = _ignoredCurves.Select(x =>
@@ -348,11 +378,17 @@ namespace Networks
             return pointToCheck.DistanceTo(curveAndDistance.Curve.GetClosestPointTo(pointToCheck, false)) >
                    curveAndDistance.Distance;
         }
-
-        private static bool IntersectRedLines(FromToPoints points)
+        
+        private static void MemorizePolyline(Polyline polyline)
         {
-            Line line = new Line(points.From, points.To);
-            return _redLines.Any(x => line.IntersectionsCount(x) > 0);
+            var distance = _startPoint.DistanceTo(polyline.GetClosestPointTo(_startPoint, false));
+            if (distance > _bestDistance)
+                return;
+            const double tolerance = 0.000000001;
+            if (Math.Abs(distance - _bestDistance) < tolerance && _bestPolyline.Length < polyline.Length)
+                return;
+            _bestPolyline = polyline;
+            _bestDistance = distance;
         }
 
         private static Point3d MovePointAway(Point3d point, CurveAndDistance curveAndDistance)
@@ -367,40 +403,6 @@ namespace Networks
             point += vector;
 
             return point;
-        }
-
-        private static void MemorizePolyline(Polyline polyline)
-        {
-            var distance = _startPoint.DistanceTo(polyline.GetClosestPointTo(_startPoint, false));
-            if (distance > _bestDistance)
-                return;
-            const double tolerance = 0.000000001;
-            if (Math.Abs(distance - _bestDistance) < tolerance && _bestPolyline.Length < polyline.Length)
-                return;
-            _bestPolyline = polyline;
-            _bestDistance = distance;
-        }
-
-        private static Point3d GetLastGoodPoint(FromToPoints points)
-        {
-            if (!CheckAllDistances(points.From))
-                return points.From;
-            Vector3d vector3d = points.To - points.From;
-            vector3d *= Delta / vector3d.Length;
-            do
-            {
-                points.From += vector3d;
-            } while (points.From.DistanceTo(points.To) > 2 * Delta && CheckAllDistances(points.From));
-
-            if (points.From.DistanceTo(points.To) < 2 * Delta)
-                return points.To;
-            return points.From;
-        }
-
-        private static bool CanIntersect(Entity entity, FromToPoints points)
-        {
-            var count = entity.IntersectionsCount(new Line(points.From, points.To));
-            return count > 0 && count < 5 && entity.Layer != Properties.Settings.Default.RedLineLayerName;
         }
     }
 }
