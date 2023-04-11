@@ -140,5 +140,32 @@ namespace Networks
 
             return new FromToPoints(pointFrom, pointTo);
         }
+
+        public static Xline GetGravityLine()
+        {
+            Document acDoc = Autocad.DocumentManager.MdiActiveDocument;
+            Database db = acDoc.Database;
+            Editor ed = acDoc.Editor;
+            
+            PromptEntityOptions options = new PromptEntityOptions("");
+            options.SetRejectMessage("");
+            options.AddAllowedClass(typeof(Line), false);
+            PromptEntityResult entSelRes = ed.GetEntity(options);
+            if (entSelRes.Status != PromptStatus.OK)
+                throw new Exception();
+            ObjectId id = entSelRes.ObjectId;
+            using (DocumentLock _ = acDoc.LockDocument())
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                Curve line = tr.GetObject(id, OpenMode.ForRead) as Curve;
+                if (line is null)
+                    throw new Exception();
+                return new Xline
+                {
+                    BasePoint = line.StartPoint,
+                    SecondPoint = line.EndPoint,
+                };
+            }
+        }
     }
 }

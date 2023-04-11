@@ -42,6 +42,7 @@
             this.ConfigureLayersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.StrictModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.MinAngleToolStripTextBox = new System.Windows.Forms.ToolStripTextBox();
+            this.ToLineToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CommunictionLabel = new System.Windows.Forms.Label();
             this.SizeLabel = new System.Windows.Forms.Label();
             this.TypeLabel = new System.Windows.Forms.Label();
@@ -156,7 +157,7 @@
             // 
             // ConfigureStripMenuItem
             // 
-            this.ConfigureStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { this.ConfigureLayersToolStripMenuItem, this.StrictModeToolStripMenuItem, this.MinAngleToolStripTextBox });
+            this.ConfigureStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { this.ConfigureLayersToolStripMenuItem, this.StrictModeToolStripMenuItem, this.MinAngleToolStripTextBox, this.ToLineToolStripMenuItem });
             this.ConfigureStripMenuItem.Name = "ConfigureStripMenuItem";
             this.ConfigureStripMenuItem.Size = new System.Drawing.Size(96, 24);
             this.ConfigureStripMenuItem.Text = "Настройки";
@@ -164,7 +165,7 @@
             // ConfigureLayersToolStripMenuItem
             // 
             this.ConfigureLayersToolStripMenuItem.Name = "ConfigureLayersToolStripMenuItem";
-            this.ConfigureLayersToolStripMenuItem.Size = new System.Drawing.Size(188, 24);
+            this.ConfigureLayersToolStripMenuItem.Size = new System.Drawing.Size(199, 24);
             this.ConfigureLayersToolStripMenuItem.Text = "Настроить слои";
             this.ConfigureLayersToolStripMenuItem.Click += new System.EventHandler(this.ConfigureLayersToolStripMenuItem_Click);
             // 
@@ -172,7 +173,7 @@
             // 
             this.StrictModeToolStripMenuItem.CheckOnClick = true;
             this.StrictModeToolStripMenuItem.Name = "StrictModeToolStripMenuItem";
-            this.StrictModeToolStripMenuItem.Size = new System.Drawing.Size(188, 24);
+            this.StrictModeToolStripMenuItem.Size = new System.Drawing.Size(199, 24);
             this.StrictModeToolStripMenuItem.Text = "Строгий режим";
             this.StrictModeToolStripMenuItem.Click += new System.EventHandler(this.StrictModeToolStripMenuItem_Click);
             // 
@@ -184,6 +185,14 @@
             this.MinAngleToolStripTextBox.ToolTipText = "Мин. улог пересечения";
             this.MinAngleToolStripTextBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.MinAngleToolStripTextBox_KeyPress);
             this.MinAngleToolStripTextBox.TextChanged += new System.EventHandler(this.MinAngleToolStripTextBox_TextChanged);
+            // 
+            // ToLineToolStripMenuItem
+            // 
+            this.ToLineToolStripMenuItem.CheckOnClick = true;
+            this.ToLineToolStripMenuItem.Name = "ToLineToolStripMenuItem";
+            this.ToLineToolStripMenuItem.Size = new System.Drawing.Size(199, 24);
+            this.ToLineToolStripMenuItem.Text = "Прижать к линии";
+            this.ToLineToolStripMenuItem.Click += new System.EventHandler(this.ToLineToolStripMenuItem_Click);
             // 
             // CommunictionLabel
             // 
@@ -279,6 +288,8 @@
             this.ResumeLayout(false);
             this.PerformLayout();
         }
+
+        private System.Windows.Forms.ToolStripMenuItem ToLineToolStripMenuItem;
 
         private System.Windows.Forms.ToolStripTextBox MinAngleToolStripTextBox;
 

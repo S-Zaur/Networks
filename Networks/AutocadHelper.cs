@@ -23,9 +23,8 @@ namespace Networks
     [SuppressMessage("ReSharper", "AccessToStaticMemberViaDerivedType")]
     internal static class AutocadHelper
     {
-        // Большой TODO Возможность сместить сроящуюся кривую к какой-то другой
         private const double Delta = 0.2;
-        private const int MaxDepth = 15;
+        private const int MaxDepth = 10;
 
         private static double _minAngle = Math.PI / 2;
 
@@ -34,7 +33,10 @@ namespace Networks
             get => _minAngle;
             set => _minAngle = value / 180 * Math.PI;
         }
-        public static bool AllowIntersection { get; set; }
+
+        public static bool AllowIntersection { get; set; } = true;
+        public static Xline GravityLine { get; set; }
+        public static bool NeedGravity { get; set; }
         private static readonly PolylineComparer Comparer = new PolylineComparer();
         private static IReadOnlyList<Curve> _ignoredCurves;
         private static IReadOnlyList<double> _distancesToIgnoredCurves;
@@ -106,7 +108,7 @@ namespace Networks
                 tr.Commit();
             }
         }
-        
+
         private static void AddSizes(Networks network)
         {
             double size = 0;
@@ -164,10 +166,29 @@ namespace Networks
                 _startPoint = points.Value.From;
                 _bestPolyline = null;
                 _bestDistance = points.Value.From.DistanceTo(points.Value.To);
-                var newLine = ConnectPoints(points.Value, 1);
-                while (newLine.Simplify(_ignoredCurves, _distancesToIgnoredCurves) != 0)
+                var fromToPoints = new FromToPoints(points.Value.From, points.Value.To);
+                Polyline newLine;
+                if (NeedGravity)
                 {
+                    fromToPoints.From = fromToPoints.From.Gravity(network);
+                    fromToPoints.To = fromToPoints.To.Gravity(network);
+                    newLine = ConnectPoints(fromToPoints, 1);
+                    // Пустой цикл, тк Simplify может не упростить до конца с первого раза
+                    while (newLine.Simplify(_ignoredCurves, _distancesToIgnoredCurves) != 0)
+                    {
+                    }
+
+                    newLine.AddVertexAt(0, points.Value.From.Convert2d(new Plane()), 0, 0, 0);
+                    newLine.AddVertexAt(newLine.NumberOfVertices, points.Value.To.Convert2d(new Plane()), 0, 0, 0);
                 }
+                else
+                {
+                    newLine = ConnectPoints(fromToPoints, 1);
+                    while (newLine.Simplify(_ignoredCurves, _distancesToIgnoredCurves) != 0)
+                    {
+                    }
+                }
+
 
                 newLine.Layer = NetworkManager.GetNetworkName(network);
                 tr.Draw(newLine);
@@ -192,7 +213,7 @@ namespace Networks
                         $"Не удалось проложить сеть {NetworkManager.GetNetworkName(network)}\n");
             }
         }
-        
+
         private static void AddPolylineToIgnores(Polyline polyline)
         {
             var network = NetworkManager.GetType(polyline.Layer);
@@ -286,7 +307,7 @@ namespace Networks
                 return points.To;
             return points.From;
         }
-        
+
         private static IEnumerable<Point3d> BypassCurve(FromToPoints points, CurveAndDistance curveAndDistance)
         {
             Vector3d prevVector = new Vector3d();
@@ -347,13 +368,13 @@ namespace Networks
 
             return points.From;
         }
-        
+
         private static bool CanIntersect(Entity entity, FromToPoints points)
         {
             var count = entity.IntersectionsCount(new Line(points.From, points.To));
             return count > 0 && count < 5 && entity.Layer != Properties.Settings.Default.RedLineLayerName;
         }
-        
+
         private static bool IntersectRedLines(FromToPoints points)
         {
             Line line = new Line(points.From, points.To);
@@ -378,7 +399,7 @@ namespace Networks
             return pointToCheck.DistanceTo(curveAndDistance.Curve.GetClosestPointTo(pointToCheck, false)) >
                    curveAndDistance.Distance;
         }
-        
+
         private static void MemorizePolyline(Polyline polyline)
         {
             var distance = _startPoint.DistanceTo(polyline.GetClosestPointTo(_startPoint, false));
@@ -403,6 +424,29 @@ namespace Networks
             point += vector;
 
             return point;
+        }
+
+        private static Point3d Gravity(this Point3d point, Networks nw)
+        {
+            var closest = GravityLine.GetClosestPointTo(point, false);
+            var l = new Line(point, closest);
+            var minimalLength = point.DistanceTo(closest);
+            foreach (var curve in _ignoredCurves)
+            {
+                Point3dCollection pts = new Point3dCollection();
+                curve.IntersectWith(l, Intersect.OnBothOperands, pts, IntPtr.Zero, IntPtr.Zero);
+                if (pts.Count == 0)
+                    continue;
+                var min = pts.Cast<Point3d>().Select(point.DistanceTo).Min();
+
+                var distance = NetworkManager.GetDistance(nw, NetworkManager.GetUniversalType(curve.Layer));
+                if (Math.Max(min - distance, 0) < minimalLength)
+                    minimalLength = Math.Max(min - distance, 0);
+            }
+
+            var vector = closest - point;
+            vector *= (minimalLength - 0.01) / vector.Length;
+            return point + vector;
         }
     }
 }

@@ -153,5 +153,17 @@ namespace Networks
             AutocadHelper.MinAngle =
                 int.Parse(MinAngleToolStripTextBox.Text == "" ? "90" : MinAngleToolStripTextBox.Text);
         }
+
+        private void ToLineToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            AutocadHelper.NeedGravity = ToLineToolStripMenuItem.Checked;
+            if (!ToLineToolStripMenuItem.Checked)
+            {
+                return;
+            }
+            WindowState = FormWindowState.Minimized;
+            AutocadHelper.GravityLine = AutocadUtilities.GetGravityLine();
+            WindowState = FormWindowState.Normal;
+        }
     }
 }
