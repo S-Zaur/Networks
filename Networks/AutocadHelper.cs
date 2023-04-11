@@ -91,7 +91,7 @@ namespace Networks
                 Curve[] buildingIgnores = objectIdsBuildings.Select(x => tr.GetObject(x, OpenMode.ForRead) as Curve)
                     .ToArray();
                 _ignoredCurves = ignores.Concat(buildingIgnores).ToArray();
-                _redLines = buildingIgnores.Where(x => x.Layer == Properties.Settings.Default.RedLineLayerName)
+                _redLines = _ignoredCurves.Where(x => x.Layer == Properties.Settings.Default.RedLineLayerName)
                     .ToArray();
                 foreach (var pair in points)
                 {

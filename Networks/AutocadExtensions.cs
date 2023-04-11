@@ -44,33 +44,12 @@ namespace Networks
             }
         }
 
-        public static void Simplify(this Polyline polyline)
-        {
-            if (polyline.NumberOfVertices <= 2)
-                return;
-
-            for (int i = 2; i < polyline.NumberOfVertices;)
-            {
-                var point1 = polyline.GetPoint2dAt(i - 2);
-                var point2 = polyline.GetPoint2dAt(i - 1);
-                var point3 = polyline.GetPoint2dAt(i);
-                var segment = new LineSegment2d(point1, point3);
-                if (segment.IsOn(point2))
-                {
-                    polyline.RemoveVertexAt(i - 1);
-                    continue;
-                }
-
-                i++;
-            }
-        }
-
         public static int Simplify(this Polyline polyline, IReadOnlyList<Curve> curves, IReadOnlyList<double> distances)
         {
             if (polyline.NumberOfVertices <= 2)
                 return 0;
             var oldNumberOfVertices = polyline.NumberOfVertices;
-            for (int i = 1; i < polyline.NumberOfVertices - 2;)
+            for (int i = 1; i < polyline.NumberOfVertices - 1;)
             {
                 if (polyline.GetPoint3dAt(i - 1) == polyline.GetPoint3dAt(i))
                 {
