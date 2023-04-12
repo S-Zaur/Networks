@@ -1,5 +1,4 @@
-﻿using System;
-using Autodesk.AutoCAD.Runtime;
+﻿using Autodesk.AutoCAD.Runtime;
 using acad = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace Networks

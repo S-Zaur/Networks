@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Net;
 using System.Windows.Forms;
 
 namespace Networks
@@ -10,36 +8,12 @@ namespace Networks
     [SuppressMessage("ReSharper", "LocalizableElement")]
     public partial class MainForm : Form
     {
-        private static readonly DateTime StopDate = new DateTime(2023, 4, 1);
 
         private readonly Dictionary<Networks, FromToPoints> _points =
             new Dictionary<Networks, FromToPoints>();
 
-        private static DateTime GetCurrentDate()
-        {
-            try
-            {
-                using (var response =
-                       WebRequest.Create(
-                               "https://fantastic-liquid-b56.notion.site/BOMB-1722dae092e749e2bb7749a50c8e9a36")
-                           .GetResponse())
-                    //string todaysDates =  response.Headers["date"];
-                    return DateTime.ParseExact(response.Headers["date"],
-                        "ddd, dd MMM yyyy HH:mm:ss 'GMT'",
-                        CultureInfo.InvariantCulture.DateTimeFormat,
-                        DateTimeStyles.AssumeUniversal);
-            }
-            catch (WebException)
-            {
-                return new DateTime(2100, 1, 1);
-            }
-        }
-
         public MainForm()
         {
-            // TODO Возможность отмены работы функции
-            if (GetCurrentDate() > StopDate)
-                return;
             InitializeComponent();
             WaterPipeTypeComboBox.SelectedIndex = 2;
             if (!Properties.Settings.Default.Configured)
